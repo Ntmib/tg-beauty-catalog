@@ -1,26 +1,42 @@
 /* ============================================
    TELEGRAM MINI APP — КАТАЛОГ БЬЮТИ-МАСТЕРА
-   Дизайн-система + компоненты + экраны
+   Дизайн-система GlowUp: rose + gold + beige
+   Шрифты: Playfair Display (заголовки) + Inter (UI)
    ============================================ */
 
-/* --- CSS-переменные из Telegram ThemeParams --- */
+/* --- CSS-переменные: GlowUp палитра --- */
 :root {
-  /* Telegram тема (фоллбэки для просмотра в браузере) */
-  --bg: var(--tg-theme-bg-color, #ffffff);
-  --text: var(--tg-theme-text-color, #000000);
-  --hint: var(--tg-theme-hint-color, #999999);
-  --link: var(--tg-theme-link-color, #2AABEE);
-  --button: var(--tg-theme-button-color, #2AABEE);
-  --button-text: var(--tg-theme-button-text-color, #ffffff);
-  --secondary-bg: var(--tg-theme-secondary-bg-color, #f0f0f0);
-  --section-bg: var(--tg-theme-section-bg-color, #ffffff);
-  --section-header: var(--tg-theme-section-header-text-color, #6d6d72);
-  --destructive: var(--tg-theme-destructive-text-color, #ff3b30);
-  --subtitle: var(--tg-theme-subtitle-text-color, #8e8e93);
-  --header-bg: var(--tg-theme-header-bg-color, #f8f8f8);
+  /* Основные цвета (замена Telegram ThemeParams) */
+  --bg: #FEFCF9;
+  --text: hsl(340 15% 20%);
+  --hint: hsl(340 10% 55%);
+  --link: hsl(340 65% 60%);
+  --button: hsl(340 65% 60%);
+  --button-text: #ffffff;
+  --secondary-bg: hsl(340 40% 94%);
+  --section-bg: #ffffff;
+  --section-header: hsl(340 10% 55%);
+  --destructive: #ff3b30;
+  --subtitle: hsl(340 10% 55%);
+  --header-bg: hsl(30 50% 96%);
 
-  /* Дополнительные переменные */
-  --accent: var(--button);
+  /* GlowUp — брендовые цвета */
+  --rose: hsl(340 65% 60%);
+  --rose-light: hsl(340 60% 94%);
+  --rose-dark: hsl(340 65% 45%);
+  --gold: hsl(38 70% 58%);
+  --gold-light: hsl(38 60% 92%);
+  --beige: hsl(30 50% 96%);
+  --border: hsl(340 20% 88%);
+
+  /* Градиенты */
+  --gradient-rose: linear-gradient(135deg, var(--rose), var(--rose-dark));
+  --gradient-gold: linear-gradient(135deg, hsl(38 70% 65%), hsl(38 70% 50%));
+  --gradient-card: linear-gradient(145deg, #ffffff, hsl(340 40% 98%));
+  --gradient-hero: linear-gradient(135deg, var(--rose-light) 0%, var(--beige) 50%, var(--gold-light) 100%);
+
+  /* Обратная совместимость */
+  --accent: var(--rose);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --transition-speed: 250ms;
 
@@ -47,21 +63,25 @@
   --gap-sm: var(--space-2);
   --gap-xs: var(--space-1);
 
-  /* Радиусы */
-  --radius-sm:   8px;
-  --radius-md:   12px;
-  --radius-lg:   20px;
+  /* Радиусы (GlowUp: увеличенные) */
+  --radius-sm:   12px;
+  --radius-md:   16px;
+  --radius-lg:   24px;
   --radius-full: 9999px;
 
   /* Обратная совместимость */
-  --card-radius: var(--radius-md);
-  --chip-radius: var(--radius-lg);
-  --btn-radius:  10px;
+  --card-radius: var(--radius-lg);
+  --chip-radius: var(--radius-full);
+  --btn-radius:  var(--radius-lg);
 
-  /* Тени */
-  --shadow-sm:  0 1px 2px rgba(0,0,0,0.06);
-  --shadow-md:  0 2px 8px rgba(0,0,0,0.08);
-  --shadow-lg:  0 4px 16px rgba(0,0,0,0.12);
+  /* Тени (GlowUp: цветные, rose-tinted) */
+  --shadow-sm:   0 1px 3px hsl(340 30% 50% / 0.06);
+  --shadow-md:   0 2px 12px hsl(340 30% 50% / 0.10);
+  --shadow-lg:   0 4px 20px hsl(340 40% 60% / 0.12);
+  --shadow-card: 0 2px 12px hsl(340 30% 50% / 0.10);
+  --shadow-soft: 0 4px 20px hsl(340 40% 60% / 0.12);
+  --shadow-rose: 0 4px 20px hsl(340 65% 60% / 0.30);
+  --shadow-gold: 0 4px 20px hsl(38 70% 58% / 0.25);
 
   /* Цвета статусов */
   --color-success: #34c759;
@@ -83,7 +103,7 @@ html {
 }
 
 body {
-  font-family: -apple-system, 'SF Pro Text', 'SF Pro Display', system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  font-family: 'Inter', -apple-system, 'SF Pro Text', system-ui, 'Segoe UI', Roboto, sans-serif;
   background: var(--bg);
   color: var(--text);
   line-height: 1.4;
@@ -94,7 +114,7 @@ body {
 }
 
 a {
-  color: var(--link);
+  color: var(--rose);
   text-decoration: none;
 }
 
@@ -115,9 +135,9 @@ input, textarea, select, button {
 
 /* Видимый фокус для клавиатурной навигации */
 :focus-visible {
-  outline: 2px solid var(--button);
+  outline: 2px solid var(--rose);
   outline-offset: 2px;
-  border-radius: var(--btn-radius);
+  border-radius: var(--radius-sm);
 }
 
 /* Инпуты — свой стиль фокуса через box-shadow, без outline */
@@ -135,7 +155,7 @@ input, textarea, select, button {
 }
 
 .text-hint { color: var(--hint); }
-.text-link { color: var(--link); }
+.text-link { color: var(--rose); }
 .text-destructive { color: var(--destructive); }
 .text-center { text-align: center; }
 .text-bold { font-weight: 600; }
@@ -189,6 +209,7 @@ input, textarea, select, button {
 }
 
 .hero-title {
+  font-family: 'Playfair Display', serif;
   font-size: var(--font-xl);
   font-weight: 700;
   color: var(--text);
@@ -231,9 +252,10 @@ input, textarea, select, button {
 
 /* Крупная цена (экран деталей услуги) */
 .price-lg {
+  font-family: 'Playfair Display', serif;
   font-size: var(--font-lg);
-  font-weight: 600;
-  color: var(--text);
+  font-weight: 700;
+  color: var(--rose);
   font-variant-numeric: tabular-nums;
 }
 
@@ -252,8 +274,10 @@ input, textarea, select, button {
   top: 0;
   z-index: 100;
   display: flex;
-  background: var(--header-bg);
-  border-bottom: 0.5px solid var(--secondary-bg);
+  background: hsl(30 50% 96% / 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
   padding: 6px;
   gap: 4px;
 }
@@ -261,7 +285,7 @@ input, textarea, select, button {
 .mode-btn {
   flex: 1;
   padding: 8px 0;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 13px;
   font-weight: 500;
   color: var(--hint);
@@ -270,7 +294,7 @@ input, textarea, select, button {
 }
 
 .mode-btn.active {
-  background: var(--bg);
+  background: white;
   color: var(--text);
   box-shadow: var(--shadow-sm);
 }
@@ -308,18 +332,20 @@ input, textarea, select, button {
   transform: translateX(-30px);
 }
 
-/* --- Типографика --- */
+/* --- Типографика (GlowUp: serif заголовки) --- */
 .page-title {
-  font-size: var(--font-lg);
-  font-weight: 600;
+  font-family: 'Playfair Display', serif;
+  font-size: var(--font-xl);
+  font-weight: 700;
   color: var(--text);
   margin-bottom: var(--space-4);
+  line-height: 1.2;
 }
 
 .section-title {
   font-size: var(--font-base);
   font-weight: 600;
-  color: var(--section-header);
+  color: var(--hint);
   margin-bottom: var(--space-2);
   margin-top: var(--space-4);
 }
@@ -338,22 +364,26 @@ input, textarea, select, button {
 .caption {
   font-size: var(--font-sm);
   color: var(--hint);
+  font-weight: 300;
 }
 
 .price {
+  font-family: 'Playfair Display', serif;
   font-size: 16px;
-  font-weight: 600;
-  color: var(--text);
+  font-weight: 700;
+  color: var(--rose);
   font-variant-numeric: tabular-nums;
 }
 
-/* --- Карточки --- */
+/* --- Карточки (GlowUp: gradient bg, colored shadow, large radius) --- */
 .card {
-  background: var(--secondary-bg);
-  border-radius: var(--radius-md);
+  background: var(--gradient-card);
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
   padding: 14px var(--space-4);
-  margin-bottom: var(--space-2);
-  transition: transform 100ms ease, box-shadow 200ms ease;
+  margin-bottom: var(--space-3);
+  box-shadow: var(--shadow-card);
+  transition: transform 200ms ease, box-shadow 200ms ease;
 }
 
 .card:active {
@@ -366,7 +396,8 @@ input, textarea, select, button {
 
 @media (hover: hover) {
   .card-clickable:hover {
-    box-shadow: var(--shadow-md);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-soft);
   }
 }
 
@@ -403,13 +434,13 @@ input, textarea, select, button {
 .card-icon {
   font-size: 20px;
   flex-shrink: 0;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg);
-  border-radius: 10px;
+  background: var(--rose-light);
+  border-radius: var(--radius-md);
 }
 
 .card-right {
@@ -431,8 +462,9 @@ input, textarea, select, button {
 
 /* --- Блок-акцент (ссылка мастера, уведомление) --- */
 .info-block {
-  background: var(--secondary-bg);
-  border-radius: var(--radius-md);
+  background: var(--gradient-card);
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
   padding: 14px var(--space-4);
   margin-bottom: var(--space-4);
 }
@@ -446,57 +478,67 @@ input, textarea, select, button {
 .info-block-value {
   font-size: var(--font-base);
   font-weight: 500;
-  color: var(--link);
+  color: var(--rose);
 }
 
-/* --- Кнопки --- */
+/* --- Кнопки (GlowUp: gradient, shadow, hover lift) --- */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.5rem;
   min-height: 44px;
-  padding: 10px 20px;
+  padding: 12px 24px;
   border-radius: var(--btn-radius);
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: opacity 150ms ease, transform 100ms ease;
+  transition: all 300ms ease;
   user-select: none;
   white-space: nowrap;
 }
 
 .btn:active {
   transform: scale(0.96);
-  opacity: 0.85;
 }
 
 .btn-primary {
-  background: var(--button);
+  background: var(--gradient-rose);
   color: var(--button-text);
   width: 100%;
+  box-shadow: var(--shadow-rose);
 }
 
 @media (hover: hover) {
   .btn-primary:hover {
-    opacity: 0.9;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px hsl(340 65% 60% / 0.40);
   }
 }
 
 .btn-secondary {
-  background: var(--secondary-bg);
-  color: var(--text);
+  background: var(--rose-light);
+  color: var(--rose);
 }
 
 @media (hover: hover) {
   .btn-secondary:hover {
+    transform: translateY(-2px);
     box-shadow: var(--shadow-sm);
   }
 }
 
 .btn-outline {
   background: transparent;
-  color: var(--link);
-  border: 1.5px solid var(--link);
+  color: var(--rose);
+  border: 2px solid var(--rose);
+}
+
+@media (hover: hover) {
+  .btn-outline:hover {
+    background: var(--rose-light);
+    transform: translateY(-2px);
+  }
 }
 
 .btn-destructive {
@@ -506,16 +548,17 @@ input, textarea, select, button {
 
 .btn-link {
   background: transparent;
-  color: var(--link);
+  color: var(--rose);
   padding: 10px 0;
   min-height: auto;
+  font-weight: 500;
 }
 
 .btn-sm {
   min-height: 36px;
   padding: 6px 14px;
   font-size: 14px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 .btn-full {
@@ -529,7 +572,7 @@ input, textarea, select, button {
   border-radius: 50%;
 }
 
-/* --- Chips (категории, дни, фильтры) --- */
+/* --- Chips (GlowUp: pill shape, gradient active) --- */
 .chips {
   display: flex;
   flex-wrap: wrap;
@@ -555,11 +598,11 @@ input, textarea, select, button {
   justify-content: center;
   height: 36px;
   padding: 0 var(--space-4);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-full);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 200ms ease, color 200ms ease, transform 200ms ease;
+  transition: all 200ms ease;
   white-space: nowrap;
   user-select: none;
   background: var(--secondary-bg);
@@ -568,8 +611,9 @@ input, textarea, select, button {
 }
 
 .chip.active {
-  background: var(--button);
-  color: var(--button-text);
+  background: var(--gradient-rose);
+  color: white;
+  box-shadow: var(--shadow-sm);
 }
 
 .chip:active {
@@ -587,7 +631,7 @@ input, textarea, select, button {
 .day-toggle {
   width: 44px;
   height: 44px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -596,13 +640,14 @@ input, textarea, select, button {
   cursor: pointer;
   background: var(--secondary-bg);
   color: var(--text);
-  transition: background 200ms ease, color 200ms ease, transform 200ms ease;
+  transition: all 200ms ease;
   user-select: none;
 }
 
 .day-toggle.active {
-  background: var(--button);
-  color: var(--button-text);
+  background: var(--gradient-rose);
+  color: white;
+  box-shadow: var(--shadow-sm);
 }
 
 .day-toggle:active {
@@ -621,19 +666,20 @@ input, textarea, select, button {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--btn-radius);
+  border-radius: var(--radius-sm);
   font-size: 15px;
   font-weight: 500;
   cursor: pointer;
   background: var(--secondary-bg);
   color: var(--text);
-  transition: background 200ms ease, color 200ms ease, transform 200ms ease;
+  transition: all 200ms ease;
   user-select: none;
 }
 
 .time-slot.active {
-  background: var(--button);
-  color: var(--button-text);
+  background: var(--gradient-rose);
+  color: white;
+  box-shadow: var(--shadow-sm);
 }
 
 .time-slot.disabled {
@@ -663,21 +709,22 @@ input, textarea, select, button {
   flex-shrink: 0;
   width: 60px;
   height: 70px;
-  border-radius: var(--card-radius);
+  border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   background: var(--secondary-bg);
-  transition: background 200ms ease, color 200ms ease, transform 200ms ease;
+  transition: all 200ms ease;
   user-select: none;
   gap: 2px;
 }
 
 .date-item.active {
-  background: var(--button);
-  color: var(--button-text);
+  background: var(--gradient-rose);
+  color: white;
+  box-shadow: var(--shadow-rose);
 }
 
 .date-item.disabled {
@@ -696,8 +743,9 @@ input, textarea, select, button {
 }
 
 .date-number {
+  font-family: 'Playfair Display', serif;
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .date-month {
@@ -707,13 +755,16 @@ input, textarea, select, button {
 
 /* --- Сводка записи (sticky) --- */
 .booking-summary {
-  background: var(--secondary-bg);
+  background: var(--gradient-card);
+  border: 1px solid var(--border);
   border-radius: var(--card-radius);
   padding: 12px 16px;
   margin-top: var(--gap);
+  box-shadow: var(--shadow-card);
 }
 
 .booking-summary-title {
+  font-family: 'Playfair Display', serif;
   font-size: 15px;
   font-weight: 600;
 }
@@ -724,7 +775,7 @@ input, textarea, select, button {
   margin-top: 4px;
 }
 
-/* --- Инпуты --- */
+/* --- Инпуты (GlowUp: border, rose focus) --- */
 .input-group {
   margin-bottom: var(--gap);
 }
@@ -741,15 +792,17 @@ input, textarea, select, button {
   width: 100%;
   min-height: 44px;
   padding: 10px 14px;
-  background: var(--secondary-bg);
+  background: white;
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-size: var(--font-base);
   color: var(--text);
-  transition: box-shadow 200ms ease;
+  transition: all 200ms ease;
 }
 
 .input:focus {
-  box-shadow: 0 0 0 2px var(--button);
+  border-color: var(--rose);
+  box-shadow: 0 0 0 3px hsl(340 65% 60% / 0.15);
 }
 
 .input::placeholder {
@@ -764,7 +817,7 @@ textarea.input {
 
 select.input {
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23999' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23927E85' stroke-width='2' fill='none'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 14px center;
   padding-right: 36px;
@@ -783,7 +836,7 @@ select.input {
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--gradient-rose);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -792,12 +845,14 @@ select.input {
   font-weight: 600;
   overflow: hidden;
   flex-shrink: 0;
+  box-shadow: var(--shadow-rose);
 }
 
 .avatar-sm {
   width: 44px;
   height: 44px;
   font-size: 18px;
+  box-shadow: none;
 }
 
 .avatar-lg {
@@ -813,8 +868,9 @@ select.input {
 }
 
 .profile-name {
+  font-family: 'Playfair Display', serif;
   font-size: var(--font-lg);
-  font-weight: 600;
+  font-weight: 700;
   margin-top: var(--space-3);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -830,7 +886,7 @@ select.input {
 
 .profile-address {
   font-size: 14px;
-  color: var(--link);
+  color: var(--rose);
   margin-top: var(--space-1);
   cursor: pointer;
 }
@@ -857,8 +913,8 @@ select.input {
 .portfolio-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 3px;
-  border-radius: var(--card-radius);
+  gap: 4px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
@@ -880,7 +936,7 @@ select.input {
   object-fit: cover;
 }
 
-/* Градиентные плейсхолдеры для демо-фото */
+/* Градиентные плейсхолдеры (GlowUp: тёплая розово-золотая палитра) */
 .portfolio-placeholder {
   width: 100%;
   height: 100%;
@@ -890,15 +946,15 @@ select.input {
   font-size: 28px;
 }
 
-.portfolio-placeholder.ph-1 { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); }
-.portfolio-placeholder.ph-2 { background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); }
-.portfolio-placeholder.ph-3 { background: linear-gradient(135deg, #fad0c4 0%, #ffd1ff 100%); }
-.portfolio-placeholder.ph-4 { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
-.portfolio-placeholder.ph-5 { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
-.portfolio-placeholder.ph-6 { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
-.portfolio-placeholder.ph-7 { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
-.portfolio-placeholder.ph-8 { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
-.portfolio-placeholder.ph-9 { background: linear-gradient(135deg, #d299c2 0%, #fef9d7 100%); }
+.portfolio-placeholder.ph-1 { background: linear-gradient(135deg, hsl(340 60% 88%) 0%, hsl(340 50% 78%) 100%); }
+.portfolio-placeholder.ph-2 { background: linear-gradient(135deg, hsl(300 40% 85%) 0%, hsl(340 55% 80%) 100%); }
+.portfolio-placeholder.ph-3 { background: linear-gradient(135deg, hsl(340 55% 85%) 0%, hsl(350 50% 80%) 100%); }
+.portfolio-placeholder.ph-4 { background: linear-gradient(135deg, hsl(350 55% 80%) 0%, hsl(340 60% 75%) 100%); }
+.portfolio-placeholder.ph-5 { background: linear-gradient(135deg, hsl(38 50% 85%) 0%, hsl(340 40% 82%) 100%); }
+.portfolio-placeholder.ph-6 { background: linear-gradient(135deg, hsl(160 40% 78%) 0%, hsl(38 50% 80%) 100%); }
+.portfolio-placeholder.ph-7 { background: linear-gradient(135deg, hsl(340 60% 80%) 0%, hsl(38 60% 75%) 100%); }
+.portfolio-placeholder.ph-8 { background: linear-gradient(135deg, hsl(340 40% 88%) 0%, hsl(350 50% 85%) 100%); }
+.portfolio-placeholder.ph-9 { background: linear-gradient(135deg, hsl(320 40% 82%) 0%, hsl(38 50% 88%) 100%); }
 
 /* Кнопка удаления фото (для мастера) */
 .portfolio-delete {
@@ -967,50 +1023,52 @@ select.input {
   cursor: pointer;
 }
 
-/* --- Табы --- */
+/* --- Табы (GlowUp: gradient active) --- */
 .tabs {
   display: flex;
   gap: 0;
   background: var(--secondary-bg);
-  border-radius: var(--btn-radius);
-  padding: 3px;
+  border-radius: var(--radius-md);
+  padding: 4px;
   margin-bottom: var(--gap);
 }
 
 .tab {
   flex: 1;
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 13px;
   font-weight: 500;
   text-align: center;
   cursor: pointer;
   color: var(--hint);
-  transition: background 200ms ease, color 200ms ease, box-shadow 200ms ease;
+  transition: all 200ms ease;
   user-select: none;
   white-space: nowrap;
 }
 
 .tab.active {
-  background: var(--bg);
-  color: var(--text);
+  background: var(--gradient-rose);
+  color: white;
   box-shadow: var(--shadow-sm);
 }
 
-/* --- Сетка 2x2 (дашборд мастера) --- */
+/* --- Сетка 2x2 (дашборд мастера, GlowUp style) --- */
 .grid-2x2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--gap-sm);
+  gap: var(--space-3);
 }
 
 .grid-tile {
-  background: var(--secondary-bg);
-  border-radius: var(--radius-md);
-  padding: var(--space-4);
+  background: var(--gradient-card);
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
+  padding: var(--space-5);
   cursor: pointer;
-  transition: transform 100ms ease, box-shadow 200ms ease;
+  transition: all 200ms ease;
   text-align: center;
+  box-shadow: var(--shadow-card);
 }
 
 .grid-tile:active {
@@ -1019,7 +1077,8 @@ select.input {
 
 @media (hover: hover) {
   .grid-tile:hover {
-    box-shadow: var(--shadow-md);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-soft);
   }
 }
 
@@ -1056,8 +1115,9 @@ select.input {
 }
 
 .empty-state-title {
+  font-family: 'Playfair Display', serif;
   font-size: var(--font-md);
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: var(--space-1);
 }
 
@@ -1069,7 +1129,8 @@ select.input {
 
 /* --- Подсказка (dismissable) --- */
 .tip {
-  background: var(--secondary-bg);
+  background: var(--gradient-card);
+  border: 1px solid var(--border);
   border-radius: var(--card-radius);
   padding: 14px 16px;
   margin-bottom: var(--gap-sm);
@@ -1108,17 +1169,31 @@ select.input {
   gap: 4px;
   font-size: 13px;
   font-weight: 500;
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
 }
 
-.status-confirmed { color: var(--color-success); }
-.status-pending { color: var(--color-warning); }
-.status-completed { color: var(--hint); }
-.status-cancelled { color: var(--color-error); }
+.status-confirmed {
+  color: var(--color-success);
+  background: hsl(145 60% 94%);
+}
+.status-pending {
+  color: var(--color-warning);
+  background: hsl(38 80% 94%);
+}
+.status-completed {
+  color: var(--hint);
+  background: var(--secondary-bg);
+}
+.status-cancelled {
+  color: var(--color-error);
+  background: hsl(0 80% 95%);
+}
 
 /* --- Разделитель --- */
 .divider {
-  height: 0.5px;
-  background: var(--secondary-bg);
+  height: 1px;
+  background: var(--border);
   margin: var(--gap) 0;
 }
 
@@ -1129,7 +1204,7 @@ select.input {
   gap: 12px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--section-header);
+  color: var(--hint);
   margin: var(--gap) 0 var(--gap-sm);
 }
 
@@ -1137,20 +1212,21 @@ select.input {
 .divider-text::after {
   content: '';
   flex: 1;
-  height: 0.5px;
-  background: var(--secondary-bg);
+  height: 1px;
+  background: var(--border);
 }
 
-/* --- Галочка успеха (анимация) --- */
+/* --- Галочка успеха (GlowUp: rose gradient) --- */
 .success-check {
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: var(--color-success);
+  background: var(--gradient-rose);
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto var(--space-4);
+  box-shadow: var(--shadow-rose);
   animation: successPop 400ms cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
 }
 
@@ -1181,21 +1257,23 @@ select.input {
 
 /* --- Шаблоны услуг (онбординг) --- */
 .service-template {
-  background: var(--secondary-bg);
+  background: var(--gradient-card);
+  border: 1px solid var(--border);
   border-radius: var(--card-radius);
   padding: 14px 16px;
-  margin-bottom: var(--gap-sm);
+  margin-bottom: var(--space-3);
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 12px;
-  transition: background 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+  transition: all 200ms ease;
   user-select: none;
+  box-shadow: var(--shadow-card);
 }
 
 .service-template.selected {
-  background: color-mix(in srgb, var(--button) 15%, var(--secondary-bg));
-  box-shadow: inset 0 0 0 2px var(--button);
+  border-color: var(--rose);
+  box-shadow: 0 0 0 2px var(--rose), var(--shadow-card);
 }
 
 .service-template:active {
@@ -1206,7 +1284,7 @@ select.input {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  border: 2px solid var(--hint);
+  border: 2px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1217,9 +1295,9 @@ select.input {
 }
 
 .service-template.selected .service-template-check {
-  background: var(--button);
-  border-color: var(--button);
-  color: var(--button-text);
+  background: var(--gradient-rose);
+  border-color: var(--rose);
+  color: white;
 }
 
 .service-template-body {
@@ -1237,7 +1315,7 @@ select.input {
   margin-top: 2px;
 }
 
-/* --- Индикатор прогресса (онбординг) --- */
+/* --- Индикатор прогресса (онбординг, GlowUp style) --- */
 .progress-dots {
   display: flex;
   align-items: center;
@@ -1250,23 +1328,24 @@ select.input {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--secondary-bg);
-  transition: all 250ms ease;
+  background: var(--border);
+  transition: all 300ms ease;
 }
 
 .progress-dot.active {
-  width: 20px;
+  width: 24px;
   border-radius: 4px;
-  background: var(--button);
+  background: var(--gradient-rose);
 }
 
-/* --- Тоггл (переключатель) --- */
+/* --- Тоггл (переключатель, GlowUp: rose on) --- */
 .toggle-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: var(--secondary-bg);
+  background: var(--gradient-card);
+  border: 1px solid var(--border);
   border-radius: var(--card-radius);
   cursor: pointer;
   margin-bottom: var(--gap-sm);
@@ -1296,14 +1375,14 @@ select.input {
   width: 44px;
   height: 26px;
   border-radius: 13px;
-  background: var(--hint);
+  background: var(--border);
   position: relative;
   transition: background 200ms ease;
   flex-shrink: 0;
 }
 
 .toggle-switch.on {
-  background: var(--color-success);
+  background: var(--rose);
 }
 
 .toggle-switch::after {
@@ -1325,10 +1404,10 @@ select.input {
 
 /* --- Skeleton-лоадеры --- */
 .skeleton {
-  background: linear-gradient(90deg, var(--secondary-bg) 25%, color-mix(in srgb, var(--secondary-bg) 80%, var(--bg)) 50%, var(--secondary-bg) 75%);
+  background: linear-gradient(90deg, var(--secondary-bg) 25%, hsl(340 30% 96%) 50%, var(--secondary-bg) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
-  border-radius: var(--btn-radius);
+  border-radius: var(--radius-sm);
 }
 
 @keyframes shimmer {
@@ -1367,7 +1446,7 @@ select.input {
 }
 
 .fade-in-up {
-  animation: fadeInUp var(--transition-speed) ease both;
+  animation: fadeInUp 350ms ease both;
 }
 
 @keyframes fadeIn {
@@ -1376,19 +1455,30 @@ select.input {
 }
 
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Задержки для каскадного появления */
-.delay-1 { animation-delay: 50ms; }
-.delay-2 { animation-delay: 100ms; }
-.delay-3 { animation-delay: 150ms; }
-.delay-4 { animation-delay: 200ms; }
-.delay-5 { animation-delay: 250ms; }
-.delay-6 { animation-delay: 300ms; }
+/* GlowUp — дополнительные анимации */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
 
-/* --- Контактная строка --- */
+@keyframes pulseSoft {
+  0%, 100% { box-shadow: 0 0 0 0 hsl(340 65% 60% / 0.4); }
+  50% { box-shadow: 0 0 0 12px hsl(340 65% 60% / 0); }
+}
+
+/* Задержки для каскадного появления */
+.delay-1 { animation-delay: 60ms; }
+.delay-2 { animation-delay: 120ms; }
+.delay-3 { animation-delay: 180ms; }
+.delay-4 { animation-delay: 240ms; }
+.delay-5 { animation-delay: 300ms; }
+.delay-6 { animation-delay: 360ms; }
+
+/* --- Контактная строка (GlowUp: rose-light bg) --- */
 .contact-row {
   display: flex;
   gap: var(--gap-sm);
@@ -1402,17 +1492,24 @@ select.input {
   justify-content: center;
   gap: 6px;
   min-height: 44px;
-  background: var(--secondary-bg);
-  border-radius: var(--btn-radius);
+  background: var(--rose-light);
+  border-radius: var(--radius-md);
   font-size: 14px;
   font-weight: 500;
-  color: var(--link);
+  color: var(--rose);
   cursor: pointer;
-  transition: transform 100ms ease;
+  transition: all 200ms ease;
 }
 
 .contact-btn:active {
   transform: scale(0.96);
+}
+
+@media (hover: hover) {
+  .contact-btn:hover {
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-2px);
+  }
 }
 
 /* --- Добавить фото (плейсхолдер) --- */
@@ -1422,20 +1519,20 @@ select.input {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: var(--secondary-bg);
-  border: 2px dashed var(--hint);
-  border-radius: var(--card-radius);
+  background: var(--rose-light);
+  border: 2px dashed var(--rose);
+  border-radius: var(--radius-lg);
   cursor: pointer;
-  color: var(--hint);
+  color: var(--rose);
   font-size: 13px;
   gap: 4px;
   transition: all 200ms ease;
+  opacity: 0.7;
 }
 
 .add-photo-btn:active {
   transform: scale(0.95);
-  border-color: var(--button);
-  color: var(--button);
+  opacity: 1;
 }
 
 .add-photo-btn-icon {
@@ -1449,7 +1546,7 @@ select.input {
   }
 
   .page-title {
-    font-size: 18px;
+    font-size: 20px;
   }
 
   .time-grid {
@@ -1478,7 +1575,7 @@ select.input {
   }
 }
 
-/* --- Модалка-оффер (первое открытие) --- */
+/* --- Модалка-оффер (GlowUp: gradient card, rose CTA) --- */
 .offer-overlay {
   position: fixed;
   inset: 0;
@@ -1501,7 +1598,8 @@ select.input {
 }
 
 .offer-card {
-  background: var(--bg);
+  background: var(--gradient-card);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: var(--space-8) var(--space-6) var(--space-6);
   width: 100%;
@@ -1509,6 +1607,7 @@ select.input {
   text-align: center;
   transform: scale(0.9) translateY(20px);
   transition: transform 350ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: var(--shadow-lg);
 }
 
 .offer-emoji {
@@ -1518,6 +1617,7 @@ select.input {
 }
 
 .offer-title {
+  font-family: 'Playfair Display', serif;
   font-size: var(--font-xl);
   font-weight: 700;
   color: var(--text);
@@ -1550,20 +1650,27 @@ select.input {
   justify-content: center;
   width: 100%;
   min-height: 48px;
-  background: var(--button);
-  color: var(--button-text);
+  background: var(--gradient-rose);
+  color: white;
   border: none;
   border-radius: var(--btn-radius);
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   text-decoration: none;
-  transition: transform 100ms ease, opacity 100ms ease;
+  transition: all 200ms ease;
+  box-shadow: var(--shadow-rose);
 }
 
 .offer-btn:active {
   transform: scale(0.97);
-  opacity: 0.9;
+}
+
+@media (hover: hover) {
+  .offer-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px hsl(340 65% 60% / 0.40);
+  }
 }
 
 .offer-skip {
