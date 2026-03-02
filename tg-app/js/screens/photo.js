@@ -13,12 +13,12 @@ export const photoScreen = {
     const photo = portfolio[params.index] || portfolio[0];
 
     return `
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh;">
+      <div class="screen-centered">
         <div class="portfolio-placeholder ${photo.placeholder} fade-in"
-             style="width: 100%; max-width: 400px; aspect-ratio: 1; border-radius: var(--card-radius); font-size: 64px; display: flex; align-items: center; justify-content: center;">
+             style="width: 100%; max-width: 400px; aspect-ratio: 1; border-radius: var(--radius-md); font-size: 64px;">
           ${photo.emoji}
         </div>
-        <div class="caption mt" style="text-align: center;">
+        <div class="caption mt text-center">
           Фото ${params.index + 1} из ${portfolio.length}
         </div>
         <button class="btn btn-secondary mt" id="btn-close-photo">Закрыть</button>

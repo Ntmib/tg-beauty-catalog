@@ -7,7 +7,7 @@
 
 import { master, services, portfolio, bookings, formatDate } from '../data.js';
 import { navigateTo } from '../router.js';
-import { hapticLight, hapticSuccess, hideMainButton } from '../telegram.js';
+import { hapticLight, hapticSuccess, hapticWarning, hideMainButton, confirm as tgConfirm } from '../telegram.js';
 
 export const dashboardScreen = {
   render() {
@@ -31,11 +31,11 @@ export const dashboardScreen = {
           </div>
           ${isPending ? `
             <div class="card-actions">
-              <button class="btn btn-sm btn-primary" data-action="confirm" data-id="${b.id}" style="flex: 1;">✓ Подтвердить</button>
+              <button class="btn btn-sm btn-primary flex-1" data-action="confirm" data-id="${b.id}">✓ Подтвердить</button>
               <button class="btn btn-sm btn-destructive" data-action="decline" data-id="${b.id}">✗</button>
             </div>
           ` : `
-            <div class="status status-confirmed" style="margin-top: 6px;">✅ Подтверждена</div>
+            <div class="status status-confirmed mt-sm">✅ Подтверждена</div>
           `}
         </div>
       `;
@@ -64,9 +64,9 @@ export const dashboardScreen = {
       ${upcomingBookings.length > 0 ? `
         <div class="section-title fade-in-up delay-2">Ближайшие записи</div>
         ${bookingCards}
-        <button class="btn btn-link fade-in-up delay-4" id="btn-all-bookings" style="width: 100%;">Все записи →</button>
+        <button class="btn btn-link btn-full fade-in-up delay-4" id="btn-all-bookings">Все записи →</button>
       ` : `
-        <div class="card fade-in-up delay-2" style="text-align: center;">
+        <div class="card fade-in-up delay-2 text-center">
           <div class="caption">Пока записей нет</div>
         </div>
       `}
@@ -74,26 +74,26 @@ export const dashboardScreen = {
       <!-- Быстрые действия (сетка 2x2) -->
       <div class="section-title fade-in-up delay-3">Быстрые действия</div>
       <div class="grid-2x2 fade-in-up delay-3">
-        <div class="grid-tile" data-goto="master-services">
+        <button class="grid-tile" data-goto="master-services">
           <div class="grid-tile-icon">📋</div>
           <div class="grid-tile-title">Услуги</div>
           <div class="grid-tile-subtitle">${activeServicesCount} услуг</div>
-        </div>
-        <div class="grid-tile" data-goto="master-portfolio">
+        </button>
+        <button class="grid-tile" data-goto="master-portfolio">
           <div class="grid-tile-icon">📷</div>
           <div class="grid-tile-title">Фото</div>
           <div class="grid-tile-subtitle">${photoCount} фото</div>
-        </div>
-        <div class="grid-tile" data-goto="master-schedule">
+        </button>
+        <button class="grid-tile" data-goto="master-schedule">
           <div class="grid-tile-icon">🕐</div>
           <div class="grid-tile-title">График</div>
           <div class="grid-tile-subtitle">${workDaysText}</div>
-        </div>
-        <div class="grid-tile" data-goto="master-profile">
+        </button>
+        <button class="grid-tile" data-goto="master-profile">
           <div class="grid-tile-icon">👤</div>
           <div class="grid-tile-title">Профиль</div>
           <div class="grid-tile-subtitle">Изменить</div>
-        </div>
+        </button>
       </div>
 
       <!-- Предпросмотр -->
@@ -104,7 +104,7 @@ export const dashboardScreen = {
       <!-- Подсказка -->
       ${photoCount === 0 ? `
         <div class="tip mt fade-in-up delay-5" id="tip-photo">
-          <div class="tip-dismiss" id="dismiss-tip">✕</div>
+          <button class="tip-dismiss" id="dismiss-tip" aria-label="Закрыть подсказку">✕</button>
           <div class="tip-icon">📷</div>
           <div class="tip-text">Добавьте фото работ — клиенты записываются на 40% чаще с портфолио</div>
         </div>
@@ -157,10 +157,14 @@ export const dashboardScreen = {
 
     // Отклонить запись
     el.querySelectorAll('[data-action="decline"]').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', async (e) => {
         e.stopPropagation();
-        hapticLight();
-        btn.closest('.card').style.opacity = '0.4';
+        hapticWarning();
+        const ok = await tgConfirm('Отклонить запись?');
+        if (ok) {
+          btn.closest('.card').style.opacity = '0.4';
+          btn.closest('.card').style.pointerEvents = 'none';
+        }
       });
     });
 

@@ -6,7 +6,7 @@
  */
 
 import { bookings, formatDate } from '../data.js';
-import { hapticLight, hapticSuccess, hideMainButton } from '../telegram.js';
+import { hapticLight, hapticSuccess, hapticWarning, hideMainButton, confirm as tgConfirm } from '../telegram.js';
 
 export const masterBookingsScreen = {
   render() {
@@ -17,12 +17,12 @@ export const masterBookingsScreen = {
 
       <!-- Табы-фильтры -->
       <div class="tabs fade-in-up delay-1" id="booking-tabs">
-        <div class="tab active" data-filter="new">Новые (${pendingCount})</div>
-        <div class="tab" data-filter="all">Все</div>
-        <div class="tab" data-filter="past">Прошлые</div>
+        <button class="tab active" data-filter="new">Новые (${pendingCount})</button>
+        <button class="tab" data-filter="all">Все</button>
+        <button class="tab" data-filter="past">Прошлые</button>
       </div>
 
-      <div id="bookings-content" class="fade-in-up delay-2">
+      <div id="bookings-content" class="fade-in-up delay-2" aria-live="polite">
         ${renderBookingsList('new')}
       </div>
     `;
@@ -99,7 +99,7 @@ function renderBookingsList(filter) {
           </div>
           ${b.status === 'pending' ? `
             <div class="card-actions">
-              <button class="btn btn-sm btn-primary" data-action="confirm" data-id="${b.id}" style="flex: 1;">✓ Подтвердить</button>
+              <button class="btn btn-sm btn-primary flex-1" data-action="confirm" data-id="${b.id}">✓ Подтвердить</button>
               <button class="btn btn-sm btn-destructive" data-action="decline" data-id="${b.id}">Нет</button>
             </div>
           ` : ''}
@@ -117,15 +117,19 @@ function setupBookingActions(el) {
       e.stopPropagation();
       hapticSuccess();
       const card = btn.closest('.card');
-      card.querySelector('.card-actions').innerHTML = '<div class="status status-confirmed" style="margin-top: 6px;">✅ Подтверждена</div>';
+      card.querySelector('.card-actions').innerHTML = '<div class="status status-confirmed mt-sm">✅ Подтверждена</div>';
     });
   });
 
   el.querySelectorAll('[data-action="decline"]').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      hapticLight();
-      btn.closest('.card').style.opacity = '0.4';
+      hapticWarning();
+      const ok = await tgConfirm('Отклонить запись?');
+      if (ok) {
+        btn.closest('.card').style.opacity = '0.4';
+        btn.closest('.card').style.pointerEvents = 'none';
+      }
     });
   });
 }

@@ -15,7 +15,7 @@ export const masterPortfolioScreen = {
     const photoItems = portfolio.map((p, i) => `
       <div class="portfolio-item" data-photo-id="${p.id}">
         <div class="portfolio-placeholder ${p.placeholder}">${p.emoji}</div>
-        <div class="portfolio-delete" data-delete="${p.id}">✕</div>
+        <button class="portfolio-delete" data-delete="${p.id}" aria-label="Удалить фото">✕</button>
       </div>
     `).join('');
 
@@ -28,10 +28,10 @@ export const masterPortfolioScreen = {
       <div class="portfolio-grid mt fade-in-up delay-1" id="portfolio-grid">
         ${photoItems}
         ${portfolio.length < MAX_PHOTOS ? `
-          <div class="add-photo-btn" id="btn-add-photo">
+          <button class="add-photo-btn" id="btn-add-photo">
             <div class="add-photo-btn-icon">+</div>
             <div>Добавить</div>
-          </div>
+          </button>
         ` : ''}
       </div>
 

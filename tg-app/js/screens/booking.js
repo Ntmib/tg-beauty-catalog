@@ -23,11 +23,11 @@ export const bookingScreen = {
     const dateItems = dates.map((d, i) => {
       const isWorkDay = master.schedule.work_days.includes(d.dayOfWeek);
       return `
-        <div class="date-item ${!isWorkDay ? 'disabled' : ''}" data-date="${d.dateStr}">
+        <button class="date-item ${!isWorkDay ? 'disabled' : ''}" data-date="${d.dateStr}" ${!isWorkDay ? 'disabled' : ''}>
           <span class="date-weekday">${d.weekdayShort}</span>
           <span class="date-number">${d.day}</span>
           <span class="date-month">${d.monthShort}</span>
-        </div>
+        </button>
       `;
     }).join('');
 
@@ -41,21 +41,21 @@ export const bookingScreen = {
 
       <!-- Время -->
       <div class="section-title fade-in-up delay-2" id="time-title">Выберите время</div>
-      <div id="time-grid-container" class="fade-in-up delay-2">
-        <div class="caption" style="text-align: center; padding: 20px 0;">
+      <div id="time-grid-container" class="fade-in-up delay-2" aria-live="polite">
+        <div class="caption text-center" style="padding: var(--space-5) 0;">
           Выберите дату, чтобы увидеть свободное время
         </div>
       </div>
 
       <!-- Сводка (скрыта до выбора) -->
-      <div id="booking-summary" style="display: none;" class="booking-summary fade-in-up">
+      <div id="booking-summary" style="display: none;" class="booking-summary fade-in-up" aria-live="polite">
         <div class="booking-summary-title" id="summary-service">💅 ${service.title}</div>
         <div class="booking-summary-details" id="summary-details"></div>
       </div>
 
       <!-- Кнопка для браузера -->
-      <button class="btn btn-primary mt" id="btn-confirm-booking"
-              style="margin-top: 24px; display: none;">
+      <button class="btn btn-primary mt-lg" id="btn-confirm-booking"
+              style="display: none;">
         Подтвердить запись
       </button>
     `;
@@ -110,7 +110,7 @@ function renderTimeSlots(el, service) {
 
   if (slots.length === 0) {
     container.innerHTML = `
-      <div class="empty-state" style="padding: 20px 0;">
+      <div class="empty-state" style="padding: var(--space-5) 0;">
         <div class="empty-state-icon">😔</div>
         <div class="empty-state-text">Нет свободного времени на эту дату</div>
       </div>
@@ -121,9 +121,9 @@ function renderTimeSlots(el, service) {
   container.innerHTML = `
     <div class="time-grid">
       ${slots.map(s => `
-        <div class="time-slot ${s.available ? '' : 'disabled'}" data-time="${s.time}">
+        <button class="time-slot ${s.available ? '' : 'disabled'}" data-time="${s.time}" ${!s.available ? 'disabled' : ''}>
           ${s.time}
-        </div>
+        </button>
       `).join('')}
     </div>
   `;

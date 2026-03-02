@@ -21,14 +21,52 @@
 
   /* Дополнительные переменные */
   --accent: var(--button);
-  --card-radius: 12px;
-  --chip-radius: 20px;
-  --btn-radius: 10px;
-  --gap: 16px;
-  --gap-sm: 8px;
-  --gap-xs: 4px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --transition-speed: 250ms;
+
+  /* Типографика — шкала размеров */
+  --font-xs:   12px;
+  --font-sm:   13px;
+  --font-base: 15px;
+  --font-md:   17px;
+  --font-lg:   20px;
+  --font-xl:   24px;
+
+  /* Spacing — шкала отступов (кратно 4px) */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+
+  /* Обратная совместимость */
+  --gap: var(--space-4);
+  --gap-sm: var(--space-2);
+  --gap-xs: var(--space-1);
+
+  /* Радиусы */
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-lg:   20px;
+  --radius-full: 9999px;
+
+  /* Обратная совместимость */
+  --card-radius: var(--radius-md);
+  --chip-radius: var(--radius-lg);
+  --btn-radius:  10px;
+
+  /* Тени */
+  --shadow-sm:  0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md:  0 2px 8px rgba(0,0,0,0.08);
+  --shadow-lg:  0 4px 16px rgba(0,0,0,0.12);
+
+  /* Цвета статусов */
+  --color-success: #34c759;
+  --color-warning: #ff9f0a;
+  --color-error:   var(--destructive);
 }
 
 /* --- Сброс и базовые стили --- */
@@ -72,6 +110,19 @@ input, textarea, select, button {
   border: none;
   outline: none;
   background: none;
+  padding: 0;
+}
+
+/* Видимый фокус для клавиатурной навигации */
+:focus-visible {
+  outline: 2px solid var(--button);
+  outline-offset: 2px;
+  border-radius: var(--btn-radius);
+}
+
+/* Инпуты — свой стиль фокуса через box-shadow, без outline */
+.input:focus-visible {
+  outline: none;
 }
 
 /* --- Утилиты --- */
@@ -89,11 +140,102 @@ input, textarea, select, button {
 .text-center { text-align: center; }
 .text-bold { font-weight: 600; }
 
-.mt-sm { margin-top: var(--gap-sm); }
-.mt { margin-top: var(--gap); }
-.mt-lg { margin-top: 24px; }
-.mb-sm { margin-bottom: var(--gap-sm); }
-.mb { margin-bottom: var(--gap); }
+.mt-sm { margin-top: var(--space-2); }
+.mt { margin-top: var(--space-4); }
+.mt-lg { margin-top: var(--space-6); }
+.mb-sm { margin-bottom: var(--space-2); }
+.mb { margin-bottom: var(--space-4); }
+
+/* Утилиты — layout */
+.flex-1 { flex: 1; }
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.flex-col-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Утилиты — spacing */
+.gap-1 { gap: var(--space-1); }
+.gap-2 { gap: var(--space-2); }
+.gap-3 { gap: var(--space-3); }
+.gap-4 { gap: var(--space-4); }
+
+/* Компоненты — экран по центру (welcome, success, photo) */
+.screen-centered {
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-5);
+}
+
+/* Компоненты — hero-секция (крупный эмодзи + заголовок) */
+.hero-emoji {
+  font-size: 56px;
+  line-height: 1;
+  margin-bottom: var(--space-5);
+}
+
+.hero-title {
+  font-size: var(--font-xl);
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+  margin-bottom: var(--space-2);
+}
+
+/* Компоненты — горизонтальный скролл фото */
+.horizontal-scroll {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: var(--space-1);
+}
+
+.horizontal-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.scroll-photo {
+  flex-shrink: 0;
+  width: 140px;
+  height: 140px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+/* Компоненты — секция с аватаркой по центру */
+.avatar-section {
+  text-align: center;
+  margin-bottom: var(--space-5);
+}
+
+.avatar-section .avatar {
+  margin: 0 auto;
+  cursor: pointer;
+}
+
+/* Крупная цена (экран деталей услуги) */
+.price-lg {
+  font-size: var(--font-lg);
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
 
 /* --- Контейнер приложения --- */
 #app {
@@ -124,13 +266,13 @@ input, textarea, select, button {
   font-weight: 500;
   color: var(--hint);
   cursor: pointer;
-  transition: all 200ms ease;
+  transition: background 200ms ease, color 200ms ease, box-shadow 200ms ease;
 }
 
 .mode-btn.active {
   background: var(--bg);
   color: var(--text);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  box-shadow: var(--shadow-sm);
 }
 
 /* --- Контейнер экранов --- */
@@ -168,18 +310,18 @@ input, textarea, select, button {
 
 /* --- Типографика --- */
 .page-title {
-  font-size: 20px;
+  font-size: var(--font-lg);
   font-weight: 600;
   color: var(--text);
-  margin-bottom: var(--gap);
+  margin-bottom: var(--space-4);
 }
 
 .section-title {
-  font-size: 15px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--section-header);
-  margin-bottom: var(--gap-sm);
-  margin-top: var(--gap);
+  margin-bottom: var(--space-2);
+  margin-top: var(--space-4);
 }
 
 .section-title:first-child {
@@ -187,13 +329,14 @@ input, textarea, select, button {
 }
 
 .body-text {
-  font-size: 15px;
+  font-size: var(--font-base);
   color: var(--text);
   line-height: 1.45;
+  word-break: break-word;
 }
 
 .caption {
-  font-size: 13px;
+  font-size: var(--font-sm);
   color: var(--hint);
 }
 
@@ -201,15 +344,16 @@ input, textarea, select, button {
   font-size: 16px;
   font-weight: 600;
   color: var(--text);
+  font-variant-numeric: tabular-nums;
 }
 
 /* --- Карточки --- */
 .card {
   background: var(--secondary-bg);
-  border-radius: var(--card-radius);
-  padding: 14px 16px;
-  margin-bottom: var(--gap-sm);
-  transition: transform 100ms ease;
+  border-radius: var(--radius-md);
+  padding: 14px var(--space-4);
+  margin-bottom: var(--space-2);
+  transition: transform 100ms ease, box-shadow 200ms ease;
 }
 
 .card:active {
@@ -218,6 +362,12 @@ input, textarea, select, button {
 
 .card-clickable {
   cursor: pointer;
+}
+
+@media (hover: hover) {
+  .card-clickable:hover {
+    box-shadow: var(--shadow-md);
+  }
 }
 
 .card-row {
@@ -232,16 +382,22 @@ input, textarea, select, button {
 }
 
 .card-title {
-  font-size: 15px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: var(--text);
   line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .card-subtitle {
-  font-size: 13px;
+  font-size: var(--font-sm);
   color: var(--hint);
   margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .card-icon {
@@ -276,19 +432,19 @@ input, textarea, select, button {
 /* --- Блок-акцент (ссылка мастера, уведомление) --- */
 .info-block {
   background: var(--secondary-bg);
-  border-radius: var(--card-radius);
-  padding: 14px 16px;
-  margin-bottom: var(--gap);
+  border-radius: var(--radius-md);
+  padding: 14px var(--space-4);
+  margin-bottom: var(--space-4);
 }
 
 .info-block-label {
-  font-size: 13px;
+  font-size: var(--font-sm);
   color: var(--hint);
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
 }
 
 .info-block-value {
-  font-size: 15px;
+  font-size: var(--font-base);
   font-weight: 500;
   color: var(--link);
 }
@@ -320,9 +476,21 @@ input, textarea, select, button {
   width: 100%;
 }
 
+@media (hover: hover) {
+  .btn-primary:hover {
+    opacity: 0.9;
+  }
+}
+
 .btn-secondary {
   background: var(--secondary-bg);
   color: var(--text);
+}
+
+@media (hover: hover) {
+  .btn-secondary:hover {
+    box-shadow: var(--shadow-sm);
+  }
 }
 
 .btn-outline {
@@ -386,12 +554,12 @@ input, textarea, select, button {
   align-items: center;
   justify-content: center;
   height: 36px;
-  padding: 0 16px;
-  border-radius: var(--chip-radius);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-lg);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 200ms ease;
+  transition: background 200ms ease, color 200ms ease, transform 200ms ease;
   white-space: nowrap;
   user-select: none;
   background: var(--secondary-bg);
@@ -428,7 +596,7 @@ input, textarea, select, button {
   cursor: pointer;
   background: var(--secondary-bg);
   color: var(--text);
-  transition: all 200ms ease;
+  transition: background 200ms ease, color 200ms ease, transform 200ms ease;
   user-select: none;
 }
 
@@ -459,7 +627,7 @@ input, textarea, select, button {
   cursor: pointer;
   background: var(--secondary-bg);
   color: var(--text);
-  transition: all 200ms ease;
+  transition: background 200ms ease, color 200ms ease, transform 200ms ease;
   user-select: none;
 }
 
@@ -502,7 +670,7 @@ input, textarea, select, button {
   justify-content: center;
   cursor: pointer;
   background: var(--secondary-bg);
-  transition: all 200ms ease;
+  transition: background 200ms ease, color 200ms ease, transform 200ms ease;
   user-select: none;
   gap: 2px;
 }
@@ -533,7 +701,7 @@ input, textarea, select, button {
 }
 
 .date-month {
-  font-size: 11px;
+  font-size: var(--font-xs);
   opacity: 0.6;
 }
 
@@ -562,7 +730,7 @@ input, textarea, select, button {
 }
 
 .input-label {
-  font-size: 13px;
+  font-size: var(--font-sm);
   font-weight: 500;
   color: var(--hint);
   margin-bottom: 6px;
@@ -574,8 +742,8 @@ input, textarea, select, button {
   min-height: 44px;
   padding: 10px 14px;
   background: var(--secondary-bg);
-  border-radius: var(--btn-radius);
-  font-size: 15px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-base);
   color: var(--text);
   transition: box-shadow 200ms ease;
 }
@@ -645,9 +813,13 @@ select.input {
 }
 
 .profile-name {
-  font-size: 20px;
+  font-size: var(--font-lg);
   font-weight: 600;
-  margin-top: 10px;
+  margin-top: var(--space-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
 }
 
 .profile-specialty {
@@ -659,7 +831,7 @@ select.input {
 .profile-address {
   font-size: 14px;
   color: var(--link);
-  margin-top: 4px;
+  margin-top: var(--space-1);
   cursor: pointer;
 }
 
@@ -731,18 +903,27 @@ select.input {
 /* Кнопка удаления фото (для мастера) */
 .portfolio-delete {
   position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: rgba(0,0,0,0.5);
+  top: -4px;
+  right: -4px;
+  width: 44px;
+  height: 44px;
+  background: transparent;
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
   cursor: pointer;
+  z-index: 1;
+}
+.portfolio-delete::before {
+  content: '';
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.5);
+  z-index: -1;
 }
 
 /* --- Просмотр фото (лайтбокс) --- */
@@ -805,7 +986,7 @@ select.input {
   text-align: center;
   cursor: pointer;
   color: var(--hint);
-  transition: all 200ms ease;
+  transition: background 200ms ease, color 200ms ease, box-shadow 200ms ease;
   user-select: none;
   white-space: nowrap;
 }
@@ -813,7 +994,7 @@ select.input {
 .tab.active {
   background: var(--bg);
   color: var(--text);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  box-shadow: var(--shadow-sm);
 }
 
 /* --- Сетка 2x2 (дашборд мастера) --- */
@@ -825,10 +1006,10 @@ select.input {
 
 .grid-tile {
   background: var(--secondary-bg);
-  border-radius: var(--card-radius);
-  padding: 16px;
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
   cursor: pointer;
-  transition: transform 100ms ease;
+  transition: transform 100ms ease, box-shadow 200ms ease;
   text-align: center;
 }
 
@@ -836,18 +1017,24 @@ select.input {
   transform: scale(0.97);
 }
 
+@media (hover: hover) {
+  .grid-tile:hover {
+    box-shadow: var(--shadow-md);
+  }
+}
+
 .grid-tile-icon {
   font-size: 28px;
-  margin-bottom: 6px;
+  margin-bottom: var(--space-2);
 }
 
 .grid-tile-title {
-  font-size: 15px;
+  font-size: var(--font-base);
   font-weight: 600;
 }
 
 .grid-tile-subtitle {
-  font-size: 12px;
+  font-size: var(--font-xs);
   color: var(--hint);
   margin-top: 2px;
 }
@@ -869,14 +1056,15 @@ select.input {
 }
 
 .empty-state-title {
-  font-size: 17px;
+  font-size: var(--font-md);
   font-weight: 600;
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
 }
 
 .empty-state-text {
   font-size: 14px;
   color: var(--hint);
+  max-width: 280px;
 }
 
 /* --- Подсказка (dismissable) --- */
@@ -901,10 +1089,10 @@ select.input {
 
 .tip-dismiss {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 24px;
-  height: 24px;
+  top: 0;
+  right: 0;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -922,10 +1110,10 @@ select.input {
   font-weight: 500;
 }
 
-.status-confirmed { color: #34c759; }
-.status-pending { color: #ff9f0a; }
+.status-confirmed { color: var(--color-success); }
+.status-pending { color: var(--color-warning); }
 .status-completed { color: var(--hint); }
-.status-cancelled { color: var(--destructive); }
+.status-cancelled { color: var(--color-error); }
 
 /* --- Разделитель --- */
 .divider {
@@ -958,11 +1146,11 @@ select.input {
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: #34c759;
+  background: var(--color-success);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 16px;
+  margin: 0 auto var(--space-4);
   animation: successPop 400ms cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
 }
 
@@ -1001,7 +1189,7 @@ select.input {
   display: flex;
   align-items: center;
   gap: 12px;
-  transition: all 200ms ease;
+  transition: background 200ms ease, box-shadow 200ms ease, transform 200ms ease;
   user-select: none;
 }
 
@@ -1115,7 +1303,7 @@ select.input {
 }
 
 .toggle-switch.on {
-  background: #34c759;
+  background: var(--color-success);
 }
 
 .toggle-switch::after {
@@ -1280,6 +1468,16 @@ select.input {
   padding-bottom: calc(var(--gap) + var(--safe-bottom));
 }
 
+/* --- Уважение к пользователям, отключившим анимации --- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* --- Модалка-оффер (первое открытие) --- */
 .offer-overlay {
   position: fixed;
@@ -1304,8 +1502,8 @@ select.input {
 
 .offer-card {
   background: var(--bg);
-  border-radius: 20px;
-  padding: 32px 24px 24px;
+  border-radius: var(--radius-lg);
+  padding: var(--space-8) var(--space-6) var(--space-6);
   width: 100%;
   max-width: 340px;
   text-align: center;
@@ -1320,23 +1518,23 @@ select.input {
 }
 
 .offer-title {
-  font-size: 22px;
+  font-size: var(--font-xl);
   font-weight: 700;
   color: var(--text);
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
   line-height: 1.25;
 }
 
 .offer-subtitle {
-  font-size: 15px;
+  font-size: var(--font-base);
   color: var(--hint);
   line-height: 1.4;
-  margin-bottom: 20px;
+  margin-bottom: var(--space-5);
 }
 
 .offer-bullets {
   text-align: left;
-  margin-bottom: 24px;
+  margin-bottom: var(--space-6);
 }
 
 .offer-bullet {

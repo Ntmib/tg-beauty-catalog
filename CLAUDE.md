@@ -164,3 +164,11 @@ curl https://tg-app-khaki.vercel.app/api/webhook
 | Переменная | Описание | Где используется |
 |-----------|----------|-----------------|
 | `BOT_TOKEN` | Токен Telegram бота (@BotFather) | api/webhook.js (Vercel env) |
+
+## UI-разработка
+
+При редизайне или создании новых экранов — использовать скилл `frontend-design` для планирования.
+Текущий стек — vanilla JS + CSS Custom Properties из Telegram ThemeParams.
+При переходе на React: Vite + shadcn/ui + lucide-react + Framer Motion.
+Картинки: Unsplash CDN или picsum.photos (не серые заглушки).
+Цвета: CSS-переменные `--tg-theme-*` от Telegram, для кастомных — через HSL custom properties.

@@ -29,9 +29,9 @@ export const catalogScreen = {
       `).join('');
 
     const portfolioItems = portfolio.map((p, i) => `
-      <div class="portfolio-item" data-photo-index="${i}">
+      <button class="portfolio-item" data-photo-index="${i}" aria-label="Фото ${i + 1}">
         <div class="portfolio-placeholder ${p.placeholder}">${p.emoji}</div>
-      </div>
+      </button>
     `).join('');
 
     return `
@@ -42,7 +42,7 @@ export const catalogScreen = {
         </div>
         <div class="profile-name">${master.name}</div>
         <div class="profile-specialty">${master.specialtyLabels[0]} · ${master.experience}</div>
-        <div class="profile-address" id="address-link">📍 ${master.address}</div>
+        <button class="profile-address" id="address-link">📍 ${master.address}</button>
 
         <div class="trust-line">
           <span>${master.bookings_count} записей</span>
@@ -53,8 +53,8 @@ export const catalogScreen = {
 
       <!-- Контакты -->
       <div class="contact-row fade-in-up delay-1">
-        <div class="contact-btn" id="btn-phone">📞 Позвонить</div>
-        <div class="contact-btn" id="btn-telegram">💬 Написать</div>
+        <button class="contact-btn" id="btn-phone">📞 Позвонить</button>
+        <button class="contact-btn" id="btn-telegram">💬 Написать</button>
       </div>
 
       <!-- Портфолио -->
@@ -70,12 +70,12 @@ export const catalogScreen = {
       </div>
 
       <!-- Мои записи (ссылка) -->
-      <div class="mt" style="text-align: center;">
+      <div class="mt text-center">
         <button class="btn btn-link fade-in-up delay-6" id="btn-my-records">📋 Мои записи</button>
       </div>
 
       <!-- Поделиться с другом -->
-      <div style="text-align: center; margin-top: 8px; padding-bottom: 16px;">
+      <div class="text-center mt-sm" style="padding-bottom: var(--space-4);">
         <button class="btn btn-outline btn-full fade-in-up delay-6" id="btn-share">
           🔗 Поделиться с другом
         </button>

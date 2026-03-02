@@ -16,38 +16,38 @@ export const welcomeScreen = {
     const name = user.first_name || 'друг';
 
     return `
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 70vh; text-align: center; padding: 20px;">
+      <div class="screen-centered">
 
-        <div class="fade-in-up" style="font-size: 56px; margin-bottom: 20px;">👋</div>
+        <div class="hero-emoji fade-in-up">👋</div>
 
-        <div class="fade-in-up delay-1" style="font-size: 24px; font-weight: 700; margin-bottom: 8px;">
+        <div class="hero-title fade-in-up delay-1">
           Привет, ${name}!
         </div>
 
-        <div class="fade-in-up delay-2" style="font-size: 15px; color: var(--hint); margin-bottom: 32px; line-height: 1.5;">
+        <div class="caption fade-in-up delay-2" style="margin-bottom: var(--space-8); line-height: 1.5;">
           Это каталог бьюти-мастера.<br>Вот что здесь можно:
         </div>
 
-        <div class="fade-in-up delay-3" style="text-align: left; width: 100%; max-width: 280px; margin-bottom: 36px;">
-          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-            <div style="font-size: 28px; flex-shrink: 0;">💅</div>
-            <div>
-              <div style="font-weight: 600; font-size: 15px;">Посмотреть услуги и цены</div>
-              <div style="font-size: 13px; color: var(--hint);">Портфолио работ с фото</div>
+        <div class="fade-in-up delay-3" style="text-align: left; width: 100%; max-width: 280px; margin-bottom: var(--space-10);">
+          <div class="card-row" style="margin-bottom: var(--space-4);">
+            <div class="card-icon">💅</div>
+            <div class="card-body">
+              <div class="card-title">Посмотреть услуги и цены</div>
+              <div class="card-subtitle">Портфолио работ с фото</div>
             </div>
           </div>
-          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-            <div style="font-size: 28px; flex-shrink: 0;">📅</div>
-            <div>
-              <div style="font-weight: 600; font-size: 15px;">Записаться онлайн</div>
-              <div style="font-size: 13px; color: var(--hint);">Выбрать дату и время за пару тапов</div>
+          <div class="card-row" style="margin-bottom: var(--space-4);">
+            <div class="card-icon">📅</div>
+            <div class="card-body">
+              <div class="card-title">Записаться онлайн</div>
+              <div class="card-subtitle">Выбрать дату и время за пару тапов</div>
             </div>
           </div>
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="font-size: 28px; flex-shrink: 0;">🔔</div>
-            <div>
-              <div style="font-weight: 600; font-size: 15px;">Получать напоминания</div>
-              <div style="font-size: 13px; color: var(--hint);">Бот напомнит о записи за день</div>
+          <div class="card-row">
+            <div class="card-icon">🔔</div>
+            <div class="card-body">
+              <div class="card-title">Получать напоминания</div>
+              <div class="card-subtitle">Бот напомнит о записи за день</div>
             </div>
           </div>
         </div>

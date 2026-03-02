@@ -17,24 +17,24 @@ export const serviceEditScreen = {
     const isNew = !service;
 
     const durationChips = durationOptions.map(d => `
-      <div class="chip ${service && service.duration === d ? 'active' : ''}" data-duration="${d}">
+      <button class="chip ${service && service.duration === d ? 'active' : ''}" data-duration="${d}">
         ${formatDuration(d)}
-      </div>
+      </button>
     `).join('');
 
     return `
       <div class="page-title fade-in-up">${isNew ? 'Новая услуга' : 'Редактировать услугу'}</div>
 
       <div class="input-group fade-in-up delay-1">
-        <label class="input-label">Название</label>
-        <input type="text" class="input" id="edit-title"
+        <label class="input-label" for="edit-title">Название</label>
+        <input type="text" class="input" id="edit-title" name="title" autocomplete="off"
                value="${service ? service.title : ''}"
                placeholder="Например: Маникюр + покрытие">
       </div>
 
       <div class="input-group fade-in-up delay-2">
-        <label class="input-label">Цена (₽)</label>
-        <input type="number" class="input" id="edit-price"
+        <label class="input-label" for="edit-price">Цена (₽)</label>
+        <input type="number" class="input" id="edit-price" name="price" autocomplete="off"
                value="${service ? service.price : ''}"
                placeholder="2500" inputmode="numeric">
       </div>
@@ -47,8 +47,8 @@ export const serviceEditScreen = {
       </div>
 
       <div class="input-group fade-in-up delay-4">
-        <label class="input-label">Описание (необязательно)</label>
-        <textarea class="input" id="edit-desc" rows="3"
+        <label class="input-label" for="edit-desc">Описание (необязательно)</label>
+        <textarea class="input" id="edit-desc" name="description" autocomplete="off" rows="3"
                   placeholder="Что входит в услугу">${service ? (service.description || '') : ''}</textarea>
       </div>
 

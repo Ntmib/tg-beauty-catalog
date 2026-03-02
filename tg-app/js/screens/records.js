@@ -39,7 +39,7 @@ export const recordsScreen = {
           <div class="card fade-in-up delay-${Math.min(i + 2, 6)}" data-booking-id="${b.id}">
             <div class="card-title">💅 ${b.service_title}</div>
             <div class="card-subtitle">${formatDate(b.booking_date)} · ${b.booking_time} - ${endTime}</div>
-            <div class="status ${statusClass}" style="margin-top: 6px;">${statusText}</div>
+            <div class="status ${statusClass}" class="mt-sm">${statusText}</div>
             <div class="card-actions">
               <button class="btn btn-destructive btn-sm" data-action="cancel" data-id="${b.id}">Отменить</button>
               <button class="btn btn-outline btn-sm" data-action="reschedule" data-id="${b.id}" data-service="${b.service_id}">Перенести</button>
@@ -57,7 +57,7 @@ export const recordsScreen = {
           <div class="card fade-in-up delay-${Math.min(i + 4, 6)}" data-booking-id="${b.id}">
             <div class="card-title">💅 ${b.service_title}</div>
             <div class="card-subtitle">${formatDate(b.booking_date)} · ${b.booking_time}</div>
-            <div class="status status-completed" style="margin-top: 6px;">✓ Завершена</div>
+            <div class="status status-completed" class="mt-sm">✓ Завершена</div>
             <div class="card-actions">
               <button class="btn btn-outline btn-sm" data-action="repeat" data-service="${b.service_id}">Повторить запись</button>
             </div>

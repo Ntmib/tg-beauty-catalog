@@ -14,7 +14,7 @@ export const masterScheduleScreen = {
     const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
     const dayToggles = days.map((d, i) => {
       const isActive = master.schedule.work_days.includes(i + 1);
-      return `<div class="day-toggle ${isActive ? 'active' : ''}" data-day="${i + 1}">${d}</div>`;
+      return `<button class="day-toggle ${isActive ? 'active' : ''}" data-day="${i + 1}">${d}</button>`;
     }).join('');
 
     const hourOptions = (selected) => Array.from({ length: 15 }, (_, i) => i + 7)
@@ -36,25 +36,25 @@ export const masterScheduleScreen = {
       </div>
 
       <div class="section-title fade-in-up delay-2">Часы работы</div>
-      <div style="display: flex; gap: 12px;" class="fade-in-up delay-2">
-        <div style="flex: 1;">
-          <label class="input-label">С</label>
+      <div class="flex-between gap-3 fade-in-up delay-2">
+        <div class="flex-1">
+          <label class="input-label" for="start-hour">С</label>
           <select class="input" id="start-hour">${hourOptions(master.schedule.start_hour)}</select>
         </div>
-        <div style="flex: 1;">
-          <label class="input-label">До</label>
+        <div class="flex-1">
+          <label class="input-label" for="end-hour">До</label>
           <select class="input" id="end-hour">${hourOptions(master.schedule.end_hour)}</select>
         </div>
       </div>
 
       <div class="section-title fade-in-up delay-3">Перерыв</div>
-      <div style="display: flex; gap: 12px;" class="fade-in-up delay-3">
-        <div style="flex: 1;">
-          <label class="input-label">С</label>
+      <div class="flex-between gap-3 fade-in-up delay-3">
+        <div class="flex-1">
+          <label class="input-label" for="break-start">С</label>
           <select class="input" id="break-start">${hourOptions(master.schedule.break_start)}</select>
         </div>
-        <div style="flex: 1;">
-          <label class="input-label">До</label>
+        <div class="flex-1">
+          <label class="input-label" for="break-end">До</label>
           <select class="input" id="break-end">${hourOptions(master.schedule.break_end)}</select>
         </div>
       </div>

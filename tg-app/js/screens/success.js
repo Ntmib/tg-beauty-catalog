@@ -17,7 +17,7 @@ export const successScreen = {
     const endTime = getEndTime(params.time, service.duration);
 
     return `
-      <div style="text-align: center; padding-top: 40px;">
+      <div class="text-center" style="padding-top: var(--space-10);">
         <!-- Анимированная галочка -->
         <div class="success-check">
           <svg viewBox="0 0 24 24">
@@ -25,34 +25,34 @@ export const successScreen = {
           </svg>
         </div>
 
-        <div class="page-title" style="margin-bottom: 4px;">Вы записаны!</div>
+        <div class="page-title" style="margin-bottom: var(--space-1);">Вы записаны!</div>
         <div class="caption">Ожидает подтверждения мастера</div>
       </div>
 
       <!-- Карточка записи -->
-      <div class="card fade-in-up delay-2" style="margin-top: 24px;">
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-          <div style="display: flex; align-items: center; gap: 8px;">
+      <div class="card fade-in-up delay-2 mt-lg">
+        <div class="flex-col-center gap-2" style="align-items: stretch;">
+          <div class="card-row gap-2">
             <span>💅</span>
             <span class="card-title">${service.title}</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="card-row gap-2">
             <span>📅</span>
             <span>${formatDate(params.date)}</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="card-row gap-2">
             <span>🕐</span>
             <span>${params.time} - ${endTime}</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="card-row gap-2">
             <span>💰</span>
             <span class="text-bold">${formatPrice(service.price)}</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="card-row gap-2">
             <span>👩</span>
             <span>${master.name}</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="card-row gap-2">
             <span>📍</span>
             <span class="text-link">${master.address}</span>
           </div>
@@ -60,12 +60,12 @@ export const successScreen = {
       </div>
 
       <!-- Подсказка -->
-      <div class="caption fade-in-up delay-3" style="text-align: center; margin-top: 16px;">
+      <div class="caption text-center fade-in-up delay-3 mt">
         Напоминание придёт за 24ч и за 2ч до записи
       </div>
 
       <!-- Кнопки -->
-      <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 24px;" class="fade-in-up delay-4">
+      <div class="flex-col-center gap-2 mt-lg fade-in-up delay-4" style="align-items: stretch;">
         <button class="btn btn-secondary btn-full" id="btn-my-records">📋 Мои записи</button>
         <button class="btn btn-link btn-full" id="btn-back-catalog">← Вернуться в каталог</button>
       </div>
