@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Каталог мастера</title>
+
+  <!-- Telegram Web App SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- Стили -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Контейнер приложения -->
+  <div id="app">
+    <!-- Переключатель режима (только для демо, в проде определяется через initData) -->
+    <div id="mode-switcher">
+      <button id="mode-client" class="mode-btn active">Клиент</button>
+      <button id="mode-master" class="mode-btn">Мастер</button>
+    </div>
+
+    <!-- Контейнер экранов — сюда рендерятся все экраны -->
+    <div id="screen-container"></div>
+  </div>
+
+  <!-- JS-модули -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
