@@ -1,513 +1,641 @@
-# Backend Plan — tg-beauty-catalog
+# BACKEND-PLAN.md — tg-beauty-catalog SaaS
+> Версия 2.0 — исправлены все критические ошибки v1.0
 
-> Полный план превращения демо-витрины в рабочий SaaS для бьюти-мастеров.
-> Дата: 2 марта 2026
+## Контекст
 
----
-
-## Идея продукта
-
-**Что это:** Telegram Mini App — конструктор персонального каталога для бьюти-мастера. Мастер подключает бота, заполняет профиль, услуги, портфолио — и получает готовый каталог с онлайн-записью прямо в Telegram.
-
-**Для кого:** Частные бьюти-мастера (маникюр, брови, ресницы, волосы, лицо, тело), которые принимают клиентов и ведут запись вручную или через мессенджер.
-
-**Проблема:** Мастер тратит время на ответы в личке ("какие цены?", "когда свободна?"), теряет клиентов из-за долгих ответов, не имеет портфолио в одном месте.
-
-**Решение:** Мастер отправляет клиенту ссылку на бота → клиент сам видит услуги, цены, портфолио, свободные слоты → записывается в 3 тапа → мастер получает уведомление.
+Превратить прототип (один мастер, hardcoded данные) в SaaS-платформу:
+- Любой мастер регистрируется, подключает своего бота, получает изолированный каталог
+- Бесплатно: до 5 услуг. Платная подписка: безлимит + White-Label
+- Оплата: YooKassa (карты РФ) + Telegram Stars (глобально)
 
 ---
 
-## Что есть сейчас
+## Стек
 
-```
-ГОТОВО (фронтенд):
-├── 16 экранов (клиент + мастер) — работают на демо-данных
-├── SPA-роутер с анимациями
-├── Дизайн-система (CSS ThemeParams, авто-тёмная тема)
-├── Telegram WebApp SDK (кнопки, вибрация, диалоги)
-├── Webhook бота (/start, /help)
-└── Деплой на Vercel (https://tg-app-khaki.vercel.app)
-
-НЕ ГОТОВО (бэкенд):
-├── ❌ База данных — всё захардкожено в data.js
-├── ❌ Авторизация — ручной переключатель клиент/мастер
-├── ❌ Личный кабинет — один мастер на всех
-├── ❌ Регистрация — нет возможности создать свой каталог
-├── ❌ Уникальные ссылки — одна ссылка для всех
-├── ❌ Реальная запись — данные не сохраняются
-├── ❌ Уведомления — бот не шлёт уведомления о записях
-└── ❌ Фото — плейсхолдеры вместо реальных фото
-```
+| Слой | Технология | Назначение |
+|------|-----------|------------|
+| Frontend | Vanilla JS + ES Modules (текущий) | Mini App в Telegram |
+| БД + RLS | Supabase (PostgreSQL) | Данные, изоляция по master_id |
+| Storage | Supabase Storage | Портфолио фото, логотипы |
+| Edge Functions | Supabase Edge Functions (Deno/TypeScript) | Auth, bot-connect, payments |
+| Webhook-сервер | Python 3.11 + aiohttp на Beget VPS | Multi-bot webhook роутинг |
+| Reverse proxy | nginx + Let's Encrypt на Beget VPS | HTTPS для Telegram webhook |
+| Деплой фронтенда | Vercel | Mini App + admin-страница |
+| Платежи | YooKassa + Telegram Stars через ПЛАТФОРМЕННОГО бота | Подписки мастеров |
+| Уведомления | Через @Beauty_100master_bot | Мастерам + себе (Дмитрию) |
 
 ---
 
-## Путь пользователя (как должно работать)
+## ИСПРАВЛЕНИЕ 1: Аутентификация — платформенный бот
 
-### Путь мастера
+### Проблема v1.0
+Initdata валидировалась токеном мастерского бота. Но новый мастер ещё не подключил бота.
 
-```
-1. Мастер находит нашего платформенного бота (или лендинг)
-   → «Хочу свой каталог»
-
-2. Получает инструкцию: создать бота в @BotFather за 2 минуты
-   → Копирует токен бота
-
-3. Вставляет токен → система автоматически:
-   • Проверяет токен (Telegram API: getMe)
-   • Настраивает бота (описание, команды, кнопка «Каталог»)
-   • Регистрирует webhook
-   • Создаёт запись мастера в БД
-
-4. Мастер открывает Mini App через своего бота
-   → Система видит: telegram_id совпадает с мастером → РЕЖИМ МАСТЕРА
-
-5. Онбординг (3 шага):
-   Шаг 1: Профиль (имя, специализация, опыт, адрес)
-   Шаг 2: Услуги (выбор из шаблонов + свои)
-   Шаг 3: Расписание (рабочие дни, часы, перерыв)
-
-6. Готово! Мастер получает уникальную ссылку:
-   → t.me/anna_beauty_bot — даёт клиентам
-```
-
-### Путь клиента
+### Решение
+Два режима валидации initData:
 
 ```
-1. Клиент получает ссылку от мастера: t.me/anna_beauty_bot
-   → Нажимает /start → Приветствие с именем мастера
+ЭТАП А (мастер ещё не подключил бота):
+  initData → проверяем HMAC-SHA256 с токеном ПЛАТФОРМЕННОГО бота
+  (@Beauty_100master_bot, токен в env-переменной PLATFORM_BOT_TOKEN)
+  → регистрируем мастера → даём доступ в онбординг
 
-2. Нажимает «Открыть каталог» → Mini App
-   → Система по bot_id определяет какого мастера показать
-
-3. Видит ИМЕННО этого мастера:
-   • Профиль, портфолио, услуги, цены
-
-4. Выбирает услугу → дату → время → Записаться!
-
-5. Запись сохраняется в базу:
-   • Клиент видит подтверждение
-   • Мастер получает уведомление в Telegram
-   • Клиент получает напоминание за 24ч и за 2ч
+ЭТАП Б (мастер подключил своего бота):
+  initData → проверяем по bot_id из initData → находим мастера в БД
+  → расшифровываем bot_token → проверяем HMAC-SHA256 с ним
+  → даём полный доступ
 ```
 
-### Изоляция данных
+### Edge Function: `POST /functions/v1/auth/telegram`
 
-```
-@anna_beauty_bot  → показывает только каталог Анны
-@olga_nails_bot   → показывает только каталог Ольги
-@maria_brows_bot  → показывает только каталог Марии
+```typescript
+// Псевдокод логики
+const botId = extractBotIdFromInitData(initData);
+let token: string;
 
-Клиенты Анны не знают о существовании Ольги.
-Мастера не видят чужих клиентов и записей.
+if (botId === PLATFORM_BOT_ID) {
+  // Новый мастер или клиент платформенного бота
+  token = PLATFORM_BOT_TOKEN;
+} else {
+  // Уже подключённый мастер
+  const master = await getMasterByBotId(botId);
+  token = decrypt(master.bot_token_enc, ENCRYPTION_KEY);
+}
+
+verifyHmacSha256(initData, token); // Бросает ошибку если не валидно
+
+const user = parseUser(initData);
+const isMaster = await checkIsMaster(user.id); // telegram_id есть в masters?
+
+return supabaseJwt({
+  sub: user.id,
+  role: isMaster ? 'master' : 'client',
+  master_id: isMaster ? masterRow.id : contextMasterId,
+});
 ```
 
 ---
 
-## Архитектура
+## ИСПРАВЛЕНИЕ 2: Telegram Stars — только через платформенного бота
 
-### Общая схема
+### Проблема v1.0
+Stars-инвойс отправлялся через бота мастера. Но провайдер Telegram Stars настраивается один раз — только у @Beauty_100master_bot.
+
+### Решение
+Все Stars-платежи отправляются через ПЛАТФОРМЕННОГО бота (@Beauty_100master_bot).
 
 ```
-┌─────────────┐     ┌──────────────┐     ┌─────────────────┐
-│  Mini App   │────▶│  Supabase    │────▶│  PostgreSQL      │
-│  (фронтенд) │     │  (API + Auth) │     │  (данные)        │
-└─────────────┘     └──────────────┘     └─────────────────┘
-                           │
-┌─────────────┐     ┌──────────────┐     ┌─────────────────┐
-│  Telegram   │────▶│  Webhook     │────▶│  Supabase        │
-│  (боты)     │     │  (Vercel)    │     │  Storage (фото)  │
-└─────────────┘     └──────────────┘     └─────────────────┘
+Stars-оплата:
+1. Мастер нажимает "Оплатить" → выбирает Stars
+2. Edge Function вызывает: платформенный бот → sendInvoice мастеру
+3. Telegram присылает pre_checkout_query → отвечаем ok
+4. Telegram присылает successful_payment → обновляем подписку
+5. Платформенный бот отправляет мастеру: "✅ Подписка Pro активирована до..."
+
+YooKassa-оплата:
+1. Мастер нажимает "Оплатить" → выбирает YooKassa
+2. Edge Function создаёт платёж через YooKassa API
+3. Возвращает confirmation_url → фронтенд открывает в браузере
+4. После оплаты YooKassa POST /functions/v1/payments/yookassa/webhook
+5. Обновляем подписку, платформенный бот уведомляет мастера
 ```
 
-### Стек технологий
-
-| Компонент | Технология | Почему |
-|-----------|-----------|--------|
-| **БД** | Supabase (PostgreSQL) | Бесплатный тир, REST API из коробки, RLS, уже используется в других проектах |
-| **API** | Supabase REST + Vercel Serverless | Не нужен отдельный сервер |
-| **Хранилище фото** | Supabase Storage | CDN, ресайз, интегрировано с БД |
-| **Авторизация** | Telegram initData + HMAC-SHA-256 | Стандарт безопасности для Mini App |
-| **Webhook ботов** | Vercel Serverless Functions | Уже работает, масштабируется автоматически |
-| **Фронтенд** | Текущий Vanilla JS (без изменений стека) | Работает, быстрый, менять не нужно |
-| **Уведомления** | Telegram Bot API | Напоминания через бота мастера |
+### Конфигурация Stars на платформенном боте
+Один раз вручную:
+1. @BotFather → /mybots → @Beauty_100master_bot → Payments → Stars
 
 ---
 
-## Схема базы данных
+## ИСПРАВЛЕНИЕ 3: HTTPS и домен для VPS
 
-### Таблица `masters` — мастера
+### Проблема v1.0
+Telegram требует HTTPS для webhook, но в плане был `http://IP:8080`.
 
+### Решение — пошаговая настройка (выполняется при деплое VPS)
+
+**Шаг 1: Купить домен**
+- Рекомендую: `beauty-bot-api.ru` или `api-beauty.ru` (Reg.ru, ~200₽/год)
+- Добавить A-запись: `api.yourdomain.ru → 193.42.124.57`
+
+**Шаг 2: Установить nginx на VPS**
+```bash
+sudo apt update && sudo apt install -y nginx certbot python3-certbot-nginx
+```
+
+**Шаг 3: Конфигурация nginx**
+```nginx
+# /etc/nginx/sites-available/beauty-api
+server {
+    listen 80;
+    server_name api.yourdomain.ru;
+
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+**Шаг 4: SSL сертификат (Let's Encrypt)**
+```bash
+sudo certbot --nginx -d api.yourdomain.ru
+# Автоматически обновляется каждые 90 дней
+```
+
+**Итоговый URL для webhook:**
+```
+https://api.yourdomain.ru/webhook/bot{bot_id}
+```
+
+**Что прописать в переменных:**
+```
+VPS_BASE_URL=https://api.yourdomain.ru
+# Edge Function будет вызывать setWebhook с этим URL
+```
+
+---
+
+## ИСПРАВЛЕНИЕ 4: Логика истечения подписки
+
+### Правило downgrade (по согласованию с Дмитрием)
+
+> Услуги сверх лимита (6+) — **скрыть от клиентов**, мастер видит их с замочком 🔒 и кнопкой "Продлить подписку"
+
+### Схема работы
+
+**В таблице `services` добавляем поле:**
+```sql
+is_over_limit  BOOLEAN DEFAULT false  -- true когда скрыта из-за downgrade
+```
+
+**Cron-задача на VPS — каждую ночь в 02:00**
+```python
+# /opt/beauty-bot/cron/check_subscriptions.py
+
+async def check_and_downgrade():
+    # 1. Найти всех мастеров у кого plan_expires_at + 3 дня < now() (grace period)
+    expired = await supabase.get_expired_masters()
+
+    for master in expired:
+        # 2. Обновить план на 'free'
+        await supabase.set_plan(master.id, 'free')
+
+        # 3. Посчитать активные услуги
+        services = await supabase.get_active_services(master.id)
+
+        if len(services) > 5:
+            # 4. Скрыть услуги с 6-й по N-ю (сортировка по sort_order)
+            over_limit = services[5:]
+            await supabase.mark_over_limit(over_limit)  # is_over_limit = true
+
+        # 5. Уведомить мастера через его бот
+        msg = (
+            "⚠️ Ваша подписка истекла.\n\n"
+            "Услуги сверх лимита скрыты от клиентов.\n"
+            "Продлите подписку: [кнопка]"
+        )
+        await send_message(master.bot_id, master.telegram_id, msg)
+
+async def send_expiry_warnings():
+    # Найти мастеров у кого plan_expires_at = now() + 3 дня (предупреждение)
+    expiring_soon = await supabase.get_expiring_in_days(3)
+    for master in expiring_soon:
+        await send_message(master, "⏰ Ваша подписка истекает через 3 дня...")
+
+# Crontab:
+# 0 2 * * * /usr/bin/python3 /opt/beauty-bot/cron/check_subscriptions.py
+```
+
+**RLS политика для скрытых услуг:**
+```sql
+-- Клиент не видит услуги помеченные is_over_limit
+CREATE POLICY "client_read_active_services" ON services
+  FOR SELECT
+  USING (
+    is_active = true
+    AND is_over_limit = false
+    AND master_id = current_setting('app.current_master_id')::uuid
+  );
+
+-- Мастер видит ВСЕ свои услуги (включая is_over_limit)
+CREATE POLICY "master_read_own_services" ON services
+  FOR SELECT
+  USING (master_id = auth.uid());
+```
+
+**UI мастера — замочек на заблокированных услугах:**
+```javascript
+// В master-services.js — если услуга is_over_limit
+const lockBadge = service.is_over_limit
+  ? `<span class="lock-badge">🔒 Скрыта — <a href="#">продлите подписку</a></span>`
+  : '';
+```
+
+**При оплате подписки — автоматически восстановить:**
+```typescript
+// Edge Function payments/yookassa/webhook и payments/stars/webhook
+async function onPaymentSuccess(masterId: string) {
+  await supabase.setPlan(masterId, 'pro', newExpiry);
+  // Снять флаги is_over_limit со всех услуг мастера
+  await supabase.restoreOverLimitServices(masterId);
+}
+```
+
+---
+
+## ИСПРАВЛЕНИЕ 5: Admin-панель для Дмитрия
+
+### Что нужно
+- Веб-страница со статистикой (количество мастеров, выручка, подписки, клиенты)
+- Telegram-уведомления при каждой оплате
+
+### Таблица: `admins`
+```sql
+id           UUID PRIMARY KEY DEFAULT gen_random_uuid()
+telegram_id  BIGINT UNIQUE NOT NULL  -- Дмитрий
+role         TEXT DEFAULT 'superadmin'
+created_at   TIMESTAMPTZ DEFAULT now()
+```
+
+### Admin Edge Function: `GET /functions/v1/admin/stats`
+Только для telegram_id из таблицы admins (service_role).
+
+```typescript
+// Возвращает:
+{
+  masters_total: 142,
+  masters_active_30d: 87,   // открывали Mini App за 30 дней
+  subscriptions: {
+    free: 98,
+    pro: 31,
+    premium: 13,
+  },
+  revenue: {
+    current_month: 14700,   // рублей
+    prev_month: 12400,
+    total: 89200,
+  },
+  top_masters: [            // топ по количеству клиентов
+    { name: "Анна И.", clients: 143, plan: "premium" },
+    ...
+  ],
+  bookings_today: 28,
+}
+```
+
+### Admin веб-страница
+**Деплой:** отдельная страница на Vercel (`/admin`)
+**Защита:** Telegram Login Widget + проверка telegram_id в таблице admins
+
+**Страница включает:**
+- Карточки: мастеров / выручка / подписки / записей сегодня
+- График выручки по месяцам
+- Таблица: мастера → план → кол-во клиентов → дата регистрации
+- Кнопки: продлить/отменить подписку вручную
+
+### Telegram-уведомления Дмитрию при каждой оплате
+
+```typescript
+async function notifyAdmin(master: Master, plan: string, amount: number, method: string) {
+  const text = [
+    `💰 Новая оплата!`,
+    ``,
+    `👤 Мастер: ${master.first_name} @${master.username}`,
+    `📦 Тариф: ${plan}`,
+    `💵 Сумма: ${amount}₽`,
+    `💳 Способ: ${method}`,
+    `📅 Дата: ${new Date().toLocaleDateString('ru-RU')}`,
+  ].join('\n');
+
+  await fetch(`https://api.telegram.org/bot${PLATFORM_BOT_TOKEN}/sendMessage`, {
+    method: 'POST',
+    body: JSON.stringify({ chat_id: ADMIN_TELEGRAM_ID, text }),
+  });
+}
+```
+
+---
+
+## Полная схема базы данных (9 таблиц)
+
+### `masters`
 ```sql
 id              UUID PRIMARY KEY DEFAULT gen_random_uuid()
-telegram_id     BIGINT UNIQUE NOT NULL      -- Telegram ID мастера
-bot_token       TEXT UNIQUE NOT NULL        -- Токен бота (зашифрован)
-bot_id          BIGINT UNIQUE NOT NULL      -- ID бота в Telegram
-bot_username    TEXT NOT NULL               -- @anna_beauty_bot
-is_bot_active   BOOLEAN DEFAULT true
-name            TEXT NOT NULL
-photo_url       TEXT                        -- Аватарка (Supabase Storage)
-specialty       TEXT[] NOT NULL             -- ['nails', 'brows']
-experience      TEXT                        -- "5 лет"
-address         TEXT
-phone           TEXT
-telegram_username TEXT                      -- @anna_nails
-schedule        JSONB NOT NULL DEFAULT '{}'
--- schedule = {
---   work_days: [1,2,3,4,5],   -- 1=Пн, 7=Вс
---   start_hour: 10,
---   end_hour: 19,
---   break_start: 13,
---   break_end: 14
--- }
-day_offs        DATE[]                      -- Конкретные выходные
+telegram_id     BIGINT UNIQUE NOT NULL
+first_name      TEXT NOT NULL
+last_name       TEXT
+username        TEXT
+bot_token_enc   TEXT UNIQUE                   -- AES-256
+bot_id          BIGINT UNIQUE
+bot_username    TEXT
+is_bot_active   BOOLEAN DEFAULT false
 onboarding_done BOOLEAN DEFAULT false
+plan            TEXT DEFAULT 'free'           -- 'free' | 'pro' | 'premium'
+plan_expires_at TIMESTAMPTZ
 created_at      TIMESTAMPTZ DEFAULT now()
+last_active_at  TIMESTAMPTZ
 ```
 
-### Таблица `services` — услуги
+### `master_profiles`
+```sql
+master_id     UUID REFERENCES masters(id) ON DELETE CASCADE PRIMARY KEY
+name          TEXT NOT NULL
+specialty     TEXT[]                          -- ['nails', 'brows']
+bio           TEXT
+experience    TEXT
+avatar_url    TEXT
+city          TEXT
+```
 
+### `services`
+```sql
+id            UUID PRIMARY KEY DEFAULT gen_random_uuid()
+master_id     UUID REFERENCES masters(id) ON DELETE CASCADE
+title         TEXT NOT NULL
+description   TEXT
+duration      INTEGER NOT NULL                -- минуты
+price         INTEGER NOT NULL                -- рубли
+is_active     BOOLEAN DEFAULT true
+is_over_limit BOOLEAN DEFAULT false           -- true = скрыта после downgrade
+sort_order    INTEGER DEFAULT 0
+created_at    TIMESTAMPTZ DEFAULT now()
+```
+
+### `portfolio`
+```sql
+id            UUID PRIMARY KEY DEFAULT gen_random_uuid()
+master_id     UUID REFERENCES masters(id) ON DELETE CASCADE
+image_url     TEXT NOT NULL
+caption       TEXT
+sort_order    INTEGER DEFAULT 0
+created_at    TIMESTAMPTZ DEFAULT now()
+```
+
+### `schedules`
+```sql
+master_id     UUID REFERENCES masters(id) PRIMARY KEY
+work_days     INTEGER[] NOT NULL              -- [1,2,3,4,5]
+start_hour    INTEGER DEFAULT 10
+end_hour      INTEGER DEFAULT 19
+break_start   INTEGER
+break_end     INTEGER
+slot_duration INTEGER DEFAULT 30
+```
+
+### `clients`
+```sql
+id            UUID PRIMARY KEY DEFAULT gen_random_uuid()
+master_id     UUID REFERENCES masters(id) ON DELETE CASCADE
+telegram_id   BIGINT NOT NULL
+first_name    TEXT
+last_name     TEXT
+username      TEXT
+created_at    TIMESTAMPTZ DEFAULT now()
+UNIQUE(master_id, telegram_id)
+```
+
+### `bookings`
 ```sql
 id              UUID PRIMARY KEY DEFAULT gen_random_uuid()
 master_id       UUID REFERENCES masters(id) ON DELETE CASCADE
-title           TEXT NOT NULL
-description     TEXT
-price           INTEGER NOT NULL            -- В рублях
-duration        INTEGER NOT NULL            -- В минутах
-category        TEXT                        -- 'nails', 'brows', etc.
-sort_order      INTEGER DEFAULT 0
-is_active       BOOLEAN DEFAULT true
-created_at      TIMESTAMPTZ DEFAULT now()
-```
-
-### Таблица `portfolio` — фото работ
-
-```sql
-id              UUID PRIMARY KEY DEFAULT gen_random_uuid()
-master_id       UUID REFERENCES masters(id) ON DELETE CASCADE
-photo_url       TEXT NOT NULL               -- Полноразмерное фото
-thumbnail_url   TEXT NOT NULL               -- Превью 200px
-service_id      UUID REFERENCES services(id) ON DELETE SET NULL
-sort_order      INTEGER DEFAULT 0
-created_at      TIMESTAMPTZ DEFAULT now()
-```
-
-### Таблица `bookings` — записи
-
-```sql
-id              UUID PRIMARY KEY DEFAULT gen_random_uuid()
-master_id       UUID REFERENCES masters(id) ON DELETE CASCADE
-service_id      UUID REFERENCES services(id) ON DELETE SET NULL
-client_tg_id    BIGINT NOT NULL             -- Telegram ID клиента
-client_name     TEXT NOT NULL
+client_id       UUID REFERENCES clients(id)
+service_id      UUID REFERENCES services(id)
 booking_date    DATE NOT NULL
 booking_time    TIME NOT NULL
-duration        INTEGER NOT NULL            -- Копия из услуги
-price           INTEGER NOT NULL            -- Копия из услуги
+duration        INTEGER NOT NULL
 status          TEXT DEFAULT 'pending'
--- Статусы: pending → confirmed → completed
---                  → cancelled_by_client
---                  → cancelled_by_master
-comment         TEXT
+-- 'pending' | 'confirmed' | 'completed'
+-- | 'cancelled_by_client' | 'cancelled_by_master'
+client_comment  TEXT
+master_comment  TEXT
 created_at      TIMESTAMPTZ DEFAULT now()
 ```
 
-### Безопасность (RLS — Row Level Security)
-
-```
-masters:    мастер видит и редактирует только свою запись
-services:   мастер — CRUD своих услуг. Клиент — только чтение (SELECT)
-portfolio:  мастер — CRUD своих фото. Клиент — только чтение
-bookings:   мастер — видит записи к себе. Клиент — видит свои записи
-```
-
-**Важно:**
-- `bot_token` хранится зашифрованным (AES-256), ключ — в переменных окружения
-- Каждый запрос от Mini App проверяется через HMAC-SHA-256 подпись `initData`
-- Токен бота никогда не отдаётся на фронтенд
-
----
-
-## Мультибот-архитектура (как работает с несколькими мастерами)
-
-### Схема
-
-```
-Бот Анны (@anna_beauty_bot)
-  → Telegram шлёт POST /api/webhook/bot123456
-                                         │
-Бот Ольги (@olga_nails_bot)              ▼
-  → Telegram шлёт POST /api/webhook/bot789012  →  Один сервер (Vercel)
-                                         │        находит мастера по bot_id
-Бот Марии (@maria_brows_bot)             │        отвечает через его токен
-  → Telegram шлёт POST /api/webhook/bot345678
+### `subscriptions` (история платежей)
+```sql
+id              UUID PRIMARY KEY DEFAULT gen_random_uuid()
+master_id       UUID REFERENCES masters(id) ON DELETE CASCADE
+plan            TEXT NOT NULL               -- 'pro' | 'premium'
+price_kopecks   INTEGER NOT NULL            -- 29900 = 299₽
+payment_method  TEXT NOT NULL               -- 'yookassa' | 'stars'
+external_id     TEXT                        -- ID в YooKassa или Stars payload
+status          TEXT DEFAULT 'pending'      -- pending | paid | cancelled
+period_start    TIMESTAMPTZ
+period_end      TIMESTAMPTZ
+created_at      TIMESTAMPTZ DEFAULT now()
 ```
 
-### Как это работает
-
-1. Мастер подключает бота → система вызывает `setWebhook(url="/api/webhook/bot{bot_id}")`
-2. Когда клиент пишет боту → Telegram шлёт POST на `/api/webhook/bot{bot_id}`
-3. Сервер по `bot_id` из URL находит мастера и его токен в БД
-4. Отвечает клиенту через токен ЭТОГО бота
-5. Mini App открывается с привязкой к конкретному боту → показывает каталог этого мастера
-
-### Определение режима (мастер или клиент)
-
+### `themes`
+```sql
+master_id       UUID REFERENCES masters(id) PRIMARY KEY
+color_scheme    TEXT DEFAULT 'rose'
+-- 'rose' | 'lavender' | 'gold' | 'dark' | 'mint'
+logo_url        TEXT
+brand_name      TEXT
+show_powered_by BOOLEAN DEFAULT true        -- false на premium
 ```
-Mini App получает initData от Telegram:
-  → initData.user.id — Telegram ID текущего пользователя
-  → Сравниваем с masters.telegram_id из БД
 
-Если совпало → РЕЖИМ МАСТЕРА (админка)
-Если нет    → РЕЖИМ КЛИЕНТА (каталог)
+### `admins`
+```sql
+id           UUID PRIMARY KEY DEFAULT gen_random_uuid()
+telegram_id  BIGINT UNIQUE NOT NULL
+role         TEXT DEFAULT 'superadmin'
+created_at   TIMESTAMPTZ DEFAULT now()
 ```
 
 ---
 
-## Что делает бот (сообщения)
+## Все API эндпоинты
 
-### Клиенту — приветствие (/start)
+### Supabase Edge Functions
 
-```
-Привет! 👋
+| Метод | Путь | Назначение | Кто вызывает |
+|-------|------|-----------|-------------|
+| POST | `/auth/telegram` | Валидация initData → JWT | Фронтенд при старте |
+| POST | `/bots/connect` | Подключить бота мастера | Мастер (онбординг) |
+| POST | `/bots/disconnect` | Отключить бота | Мастер (настройки) |
+| GET | `/services/check-limit` | Можно ли добавить услугу | Фронтенд мастера |
+| POST | `/payments/yookassa/create` | Создать платёж | Фронтенд мастера |
+| POST | `/payments/yookassa/webhook` | Событие от YooKassa | YooKassa (внешний) |
+| POST | `/payments/stars/create` | Отправить инвойс Stars | Фронтенд мастера |
+| POST | `/bookings/notify` | Уведомить мастера о записи | Фронтенд после booking |
+| GET | `/admin/stats` | Статистика платформы | Admin-страница |
+| POST | `/admin/subscription` | Ручное изменение подписки | Admin-страница |
 
-Я бот мастера Анна Иванова.
-💅 Маникюр, педикюр, дизайн ногтей
-📍 ул. Тверская, 15
+### VPS (Python/aiohttp)
 
-Откройте каталог, чтобы посмотреть работы и записаться.
+| Метод | Путь | Назначение |
+|-------|------|-----------|
+| POST | `/webhook/bot{bot_id}` | Webhook от Telegram ботов |
+| POST | `/notify` | Уведомления от Supabase |
+| GET | `/health` | Проверка работоспособности |
 
-[Открыть каталог]      ← inline кнопка → Mini App
-[Мои записи]           ← inline кнопка → Mini App
-[Связаться с мастером] ← inline кнопка → чат с мастером
-```
+---
 
-### Клиенту — подтверждение записи
+## Монетизация
 
-```
-✅ Вы записаны!
+| Параметр | Free | Pro (299₽/мес) | Premium (599₽/мес) |
+|---------|------|---------------|-------------------|
+| Услуг | 5 | Безлимит | Безлимит |
+| Фото портфолио | 10 | 50 | Безлимит |
+| История записей | 30 дней | 1 год | Навсегда |
+| Цветовая тема | ❌ | ❌ | ✅ (5 тем) |
+| Логотип + название | ❌ | ❌ | ✅ |
+| Убрать "Powered by" | ❌ | ❌ | ✅ |
+| Grace period при просрочке | — | 3 дня | 3 дня |
 
-💅 Маникюр + покрытие
-📅 Среда, 5 марта
-🕐 14:00 - 16:00
-💰 2 500 ₽
-👩 Мастер: Анна Иванова
-📍 ул. Тверская, 15
+---
 
-Напоминание придёт за 24ч и за 2ч.
-
-[Открыть мои записи]
-```
-
-### Мастеру — новая запись
-
-```
-📝 Новая запись!
-
-👤 Мария П.
-💅 Маникюр + покрытие
-📅 Среда, 5 марта · 14:00
-💰 2 500 ₽
-
-[Подтвердить]  [Отклонить]
-```
-
-### Клиенту — напоминание (за 24ч)
+## Поток регистрации мастера (детально)
 
 ```
-🔔 Напоминание: завтра запись
+1. Мастер открывает @Beauty_100master_bot → Menu Button
+2. Mini App стартует, initData содержит bot_id = PLATFORM_BOT_ID
+3. POST /auth/telegram → валидация по PLATFORM_BOT_TOKEN
+4. telegram_id не найден в masters → создаём запись (plan=free)
+5. Возвращаем JWT с role=master
 
-💅 Маникюр + покрытие
-📅 Среда, 5 марта · 14:00
-👩 Анна Иванова
-📍 ул. Тверская, 15
+6. ОНБОРДИНГ ШАГ 0: "Подключите вашего бота"
+   → Инструкция: @BotFather → /newbot → скопировать токен
+   → Поле ввода "Вставьте токен"
+   → Кнопка "Подключить"
+   → POST /bots/connect (токен)
+
+7. Edge Function /bots/connect:
+   a. Telegram getMe → bot_id, bot_username
+   b. Проверить что бот не привязан к другому мастеру
+   c. Зашифровать токен AES-256, сохранить в masters
+   d. setWebhook → https://api.yourdomain.ru/webhook/bot{bot_id}
+   e. setChatMenuButton → кнопка "Открыть каталог"
+   f. setMyCommands → [/start, /help]
+   g. setMyDescription → "Каталог мастера {name}"
+   h. setMyShortDescription → "Запись онлайн"
+   i. Вернуть {ok: true, bot_username: "@anna_beauty_bot"}
+
+8. Показать "✅ @anna_beauty_bot подключён"
+9. ОНБОРДИНГ ШАГ 1: Профиль
+10. ОНБОРДИНГ ШАГ 2: Услуги
+11. ОНБОРДИНГ ШАГ 3: Расписание
+12. navigateToRoot('dashboard')
 ```
 
 ---
 
-## План реализации по этапам
+## Поток клиента (детально)
 
-### Этап 0. Supabase — база и таблицы
-**Что делаем:** Создаём проект в Supabase, таблицы, RLS-политики.
-**Результат:** Пустая БД, готовая принимать данных.
+```
+1. Клиент нажимает Menu в @anna_beauty_bot
+2. initData содержит bot_id = anna_bot_id (мастерской бот)
+3. POST /auth/telegram → bot_id → найти мастера → валидация
+4. telegram_id не в clients → создать запись (master_id + telegram_id)
+5. JWT с role=client, master_id = anna's UUID
 
-Шаги:
-- [ ] Создать проект в Supabase (supabase.com)
-- [ ] Создать таблицы: masters, services, portfolio, bookings
-- [ ] Настроить RLS-политики для каждой таблицы
-- [ ] Создать Storage bucket для фото (portfolio-photos)
-- [ ] Сохранить ключи: SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_KEY
-- [ ] Добавить ключи в Vercel (env variables)
+6. Supabase RLS: клиент видит только services WHERE
+   master_id = anna's UUID AND is_active = true AND is_over_limit = false
+
+7. Клиент бронирует → INSERT bookings
+8. POST /bookings/notify → VPS → анна получает уведомление в @anna_beauty_bot
+```
 
 ---
 
-### Этап 1. API — связь фронтенда с базой
-**Что делаем:** Vercel Serverless Functions — API для чтения/записи данных.
-**Результат:** Фронтенд получает реальные данные из базы вместо data.js.
+## Порядок разработки
 
-API-эндпоинты:
+### Этап 1: Supabase — Инфраструктура
+- [ ] Создать проект Supabase
+- [ ] SQL: создать все 10 таблиц (включая admins)
+- [ ] Настроить RLS политики для всех таблиц
+- [ ] Создать Supabase Storage buckets: `portfolio` (public), `logos` (public)
+- [ ] Настроить политики Storage (мастер загружает только в свою папку `/{master_id}/`)
+- [ ] Добавить seed-данные для тестирования
 
-```
-GET    /api/master?bot_id=123      → Профиль мастера
-GET    /api/services?master_id=X   → Услуги мастера
-GET    /api/portfolio?master_id=X  → Портфолио мастера
-GET    /api/bookings?master_id=X   → Записи (для мастера)
-GET    /api/bookings?client_tg=Y   → Записи (для клиента)
-POST   /api/booking                → Создать запись
-PATCH  /api/booking/:id            → Изменить статус записи
-POST   /api/master/setup           → Регистрация мастера (токен бота)
-PATCH  /api/master/:id             → Обновить профиль мастера
-POST   /api/service                → Создать услугу
-PATCH  /api/service/:id            → Обновить услугу
-DELETE /api/service/:id            → Удалить услугу
-POST   /api/portfolio/upload       → Загрузить фото
-DELETE /api/portfolio/:id          → Удалить фото
-POST   /api/auth/validate          → Проверить initData (HMAC)
-```
+### Этап 2: VPS — HTTPS + webhook сервер
+- [ ] Купить домен, настроить A-запись → 193.42.124.57
+- [ ] Установить nginx на VPS
+- [ ] Получить SSL-сертификат Let's Encrypt (certbot)
+- [ ] Написать Python/aiohttp сервер (`/webhook/bot{id}`, `/notify`, `/health`)
+- [ ] Реализовать AES-256 расшифровку токена
+- [ ] Обработчики: /start, /start admin, /start from_app, /help, обычное сообщение
+- [ ] Настроить systemd-сервис для автозапуска
+- [ ] Написать cron-скрипт check_subscriptions.py
+- [ ] Настроить crontab: 02:00 каждую ночь
 
-Шаги:
-- [ ] Создать `/api/auth/validate.js` — проверка initData через HMAC-SHA-256
-- [ ] Создать `/api/master.js` — GET (профиль), POST (регистрация), PATCH (обновление)
-- [ ] Создать `/api/services.js` — CRUD услуг
-- [ ] Создать `/api/portfolio.js` — загрузка/удаление фото
-- [ ] Создать `/api/bookings.js` — создание записи, смена статуса
-- [ ] Создать `/api/slots.js` — расчёт свободных слотов (по расписанию минус занятые)
+### Этап 3: Edge Functions — Auth + Bot Connect
+- [ ] `auth/telegram`: двухрежимная валидация (platform / master token)
+- [ ] `bots/connect`: getMe → encrypt → setWebhook + все setChat* методы
+- [ ] `bots/disconnect`: deleteWebhook + очистка БД
+- [ ] `services/check-limit`: счётчик активных услуг vs план
 
----
+### Этап 4: Frontend → Supabase
+- [ ] Добавить Supabase JS SDK (CDN)
+- [ ] Заменить `data.js` на реальные Supabase-запросы
+- [ ] Мастер: сохранение профиля, услуг, расписания, портфолио
+- [ ] Клиент: чтение услуг/портфолио через RLS
+- [ ] Загрузка фото в Supabase Storage
+- [ ] Экран онбординга Шаг 0 (подключение бота)
 
-### Этап 2. Фронтенд — подключение к API
-**Что делаем:** Заменяем импорт из data.js на запросы к API.
-**Результат:** Экраны показывают реальные данные из базы.
+### Этап 5: Монетизация
+- [ ] Edge Function: `payments/yookassa/create` + `/webhook`
+- [ ] Edge Function: `payments/stars/create` + обработка pre_checkout
+- [ ] UI выбора плана в дашборде мастера
+- [ ] Ограничения по плану в UI (кнопка добавить услугу disabled + подсказка)
+- [ ] Замочки на услугах is_over_limit в master-services.js
+- [ ] Telegram-уведомление мастеру после успешной оплаты
+- [ ] Telegram-уведомление Дмитрию после каждой оплаты
 
-Шаги:
-- [ ] Создать `js/api.js` — модуль для запросов к API (fetch + initData в headers)
-- [ ] Переписать `catalog.js` — загружать мастера и услуги из API
-- [ ] Переписать `service.js` — загружать детали услуги из API
-- [ ] Переписать `booking.js` — загружать свободные слоты из API, отправлять запись
-- [ ] Переписать `records.js` — загружать записи клиента из API
-- [ ] Переписать `dashboard.js` — загружать данные мастера из API
-- [ ] Переписать мастер-экраны — CRUD через API
-- [ ] Добавить состояния загрузки (скелетоны) и ошибок
-- [ ] Определение режима (мастер/клиент) по initData вместо ручного переключателя
+### Этап 6: White-Label
+- [ ] Экран выбора темы (только premium)
+- [ ] Загрузка логотипа через Supabase Storage
+- [ ] Динамическое применение CSS-переменных из таблицы themes
+- [ ] Убирать/показывать "Powered by" в зависимости от плана
 
----
-
-### Этап 3. Регистрация мастера
-**Что делаем:** Страница/бот для подключения нового мастера.
-**Результат:** Любой мастер может создать свой каталог за 2 минуты.
-
-Процесс:
-```
-Мастер создаёт бота в @BotFather
-  → Копирует токен
-  → Вставляет токен на нашей странице/боте
-  → Система проверяет токен (getMe)
-  → Автонастройка бота (описание, команды, webhook, кнопка «Каталог»)
-  → Мастер получает сообщение: «Бот подключён! Настройте каталог»
-  → Открывает Mini App → онбординг (3 шага)
-```
-
-Шаги:
-- [ ] Создать `/api/master/setup.js` — принять токен, проверить (getMe), настроить бота
-- [ ] Создать страницу подключения (или использовать платформенного бота)
-- [ ] Автонастройка через Telegram API: setMyDescription, setMyCommands, setChatMenuButton, setWebhook
-- [ ] Переписать webhook: `/api/webhook/[botId].js` — динамический роутинг по bot_id
-- [ ] Переписать онбординг — сохранять данные в БД вместо демо-объекта
+### Этап 7: Admin-страница для Дмитрия
+- [ ] Отдельная страница `/admin` на Vercel
+- [ ] Telegram Login Widget для аутентификации
+- [ ] Edge Function `admin/stats` с метриками
+- [ ] Edge Function `admin/subscription` для ручного управления
+- [ ] UI: карточки + таблица мастеров + график выручки
 
 ---
 
-### Этап 4. Уведомления через бота
-**Что делаем:** Бот отправляет сообщения клиентам и мастеру при изменениях.
-**Результат:** Мастер узнаёт о записи мгновенно, клиент получает напоминания.
+## Переменные окружения
 
-Уведомления:
+### Vercel (Mini App фронтенд)
 ```
-Событие                    → Кому        → Что
-Новая запись               → Мастеру     → «Новая запись! [Подтвердить/Отклонить]»
-Запись подтверждена        → Клиенту     → «Мастер подтвердил вашу запись»
-Запись отклонена           → Клиенту     → «Мастер отклонил запись, выберите другое время»
-Отмена клиентом            → Мастеру     → «Клиент отменил запись»
-Напоминание за 24ч         → Клиенту     → «Завтра запись к мастеру»
-Напоминание за 2ч          → Клиенту     → «Через 2 часа запись!»
+VITE_SUPABASE_URL=https://xxx.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJ...
 ```
 
-Шаги:
-- [ ] В `/api/bookings.js` при создании записи → отправить уведомление мастеру
-- [ ] В `/api/bookings.js` при подтверждении/отклонении → уведомить клиента
-- [ ] Создать Vercel Cron Job для напоминаний (проверять каждый час)
-- [ ] Inline-кнопки в уведомлениях мастеру (подтвердить/отклонить)
-- [ ] Callback query handler в webhook для обработки нажатий на кнопки
+### Supabase Edge Functions (Secrets)
+```
+PLATFORM_BOT_TOKEN=        # токен @Beauty_100master_bot
+PLATFORM_BOT_ID=           # ID @Beauty_100master_bot (из getMe)
+TOKEN_ENCRYPTION_KEY=      # AES-256 ключ (32 байта, hex)
+YOOKASSA_SHOP_ID=
+YOOKASSA_SECRET_KEY=
+VPS_BASE_URL=https://api.yourdomain.ru
+VPS_NOTIFY_SECRET=         # shared secret для /notify endpoint
+ADMIN_TELEGRAM_ID=         # telegram_id Дмитрия
+```
 
----
-
-### Этап 5. Загрузка фото
-**Что делаем:** Мастер загружает реальные фото работ.
-**Результат:** Портфолио с настоящими фотографиями вместо плейсхолдеров.
-
-Шаги:
-- [ ] Настроить Supabase Storage bucket (portfolio-photos)
-- [ ] API: загрузка фото (resize до 800px + thumbnail 200px)
-- [ ] API: удаление фото
-- [ ] Переписать `master-portfolio.js` — загрузка через форму
-- [ ] Переписать `catalog.js` и `photo.js` — показывать реальные фото
-- [ ] Лимит: 20 фото на мастера
-
----
-
-## Переменные окружения (после подключения бэкенда)
-
-```env
-# Telegram
-BOT_TOKEN=...                     # Токен платформенного бота (для регистрации)
-
-# Supabase
+### Beget VPS (.env)
+```
 SUPABASE_URL=https://xxx.supabase.co
-SUPABASE_ANON_KEY=eyJ...          # Публичный ключ (фронтенд)
-SUPABASE_SERVICE_KEY=eyJ...       # Серверный ключ (только API)
-
-# Безопасность
-ENCRYPTION_KEY=...                # AES-256 ключ для шифрования bot_token
+SUPABASE_SERVICE_KEY=eyJ...  # service_role, ТОЛЬКО на VPS
+TOKEN_ENCRYPTION_KEY=         # тот же ключ что в Supabase secrets
+VPS_NOTIFY_SECRET=            # тот же secret
+PORT=8080
 ```
 
 ---
 
-## Что НЕ входит в этот план (v2 и дальше)
+## Безопасность
 
-| Фича | Почему не сейчас |
-|------|-----------------|
-| Оплата через Telegram Payments | Сначала проверить спрос на запись |
-| Аналитика (конверсия, популярные услуги) | После набора 10+ мастеров |
-| Отзывы клиентов | Усложняет MVP |
-| Админ-панель платформы | Пока управление через Supabase Dashboard |
-| Промокоды и скидки | v2 |
-| Мультиязычность | Только русский |
-| Групповые записи | Нет запроса |
-
----
-
-## Оценка объёма
-
-| Этап | Что | Примерный объём |
-|------|-----|----------------|
-| 0 | Supabase (БД + таблицы) | Настройка |
-| 1 | API (10+ эндпоинтов) | Основная работа |
-| 2 | Фронтенд → API | Рефакторинг экранов |
-| 3 | Регистрация мастера | Новый функционал |
-| 4 | Уведомления | Расширение webhook |
-| 5 | Загрузка фото | Storage + UI |
-
-**Порядок важен:** каждый этап строится на предыдущем. Нельзя делать уведомления (4) без API (1) и БД (0).
-
----
-
-## Итого: что получит мастер
-
-1. **Свой бот** с именем и описанием
-2. **Личный каталог** — услуги, цены, портфолио
-3. **Онлайн-запись** — клиент выбирает дату и время сам
-4. **Уведомления** — новая запись, подтверждение, напоминания
-5. **Уникальная ссылка** — `t.me/имя_бота` для раздачи клиентам
-6. **Мгновенная настройка** — 2 минуты от создания бота до готового каталога
-
----
-
-*Документ создан на основе brief.md (ТЗ) и текущего состояния фронтенда.*
+1. **initData** — всегда проверяется на сервере (Edge Function), никогда на клиенте
+2. **bot_token** — шифруется AES-256, хранится в БД, расшифровывается только на VPS
+3. **service_role ключ** — только на VPS, никогда на фронтенде или в Vercel
+4. **RLS** — мастер физически не может прочитать данные другого мастера
+5. **HMAC** между Supabase и VPS — VPS_NOTIFY_SECRET защищает /notify
+6. **Admin** — проверка telegram_id в таблице admins + service_role
+7. **Storage** — политики: мастер загружает только в папку `/{master_id}/`

@@ -1,0 +1,17 @@
+[Unit]
+Description=Beauty Bot Webhook Server
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/beauty-bot
+ExecStart=/opt/beauty-bot/venv/bin/python main.py
+Restart=always
+RestartSec=5
+EnvironmentFile=/opt/beauty-bot/.env
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
