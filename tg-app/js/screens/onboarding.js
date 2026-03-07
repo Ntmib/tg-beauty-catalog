@@ -11,8 +11,8 @@
 import { specialties, serviceTemplates, formatPrice, formatDuration } from '../data.js';
 import { navigateToRoot } from '../router.js';
 import { showMainButton, hapticSelection, hapticSuccess } from '../telegram.js';
-import { saveMasterProfile, saveService, saveSchedule, completeOnboarding, getMasterId } from '../api.js';
-import { callEdgeFunction } from '../auth.js';
+import { saveMasterProfile, saveService, saveSchedule, completeOnboarding } from '../api.js';
+import { callEdgeFunction, getMasterId } from '../auth.js';
 
 let currentStep = 0;
 let selectedSpecialties = [];
