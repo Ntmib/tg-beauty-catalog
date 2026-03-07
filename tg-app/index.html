@@ -6,22 +6,64 @@
   <meta name="theme-color" content="#FEFCF9">
   <title>Каталог мастера</title>
 
-  <!-- Preconnect -->
   <link rel="preconnect" href="https://telegram.org">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://zbxbeagmqmnijkjhhcgp.supabase.co">
 
-  <!-- Google Fonts: Playfair Display + Inter -->
-  <link href="https://fonts.googleapis.com/css2?family=Playfair Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 
   <!-- Telegram Web App SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-  <!-- Supabase SDK (локальный UMD-бандл, без внешних CDN) -->
+  <!-- Supabase SDK (локальный UMD-бандл) -->
   <script src="js/lib/supabase.min.js"></script>
 
-  <!-- Стили -->
+  <!-- ДИАГНОСТИКА: перехватить ошибку ДО загрузки модулей -->
+  <script>
+    window._appStarted = false;
+    window._lastError = null;
+    window._lastRejection = null;
+
+    // Перехватить синхронные JS-ошибки (включая ошибки загрузки модулей)
+    window.addEventListener('error', function(e) {
+      var detail = (e.message || 'unknown') + '\n' + (e.filename || '').split('/').slice(-2).join('/') + ':' + (e.lineno || 0);
+      window._lastError = detail;
+      console.error('[diag:error]', detail);
+    });
+
+    // Перехватить отклонённые промисы (включая динамические импорты)
+    window.addEventListener('unhandledrejection', function(e) {
+      var detail = String(e.reason || 'unknown rejection');
+      window._lastRejection = detail;
+      console.error('[diag:rejection]', detail);
+    });
+
+    // Watchdog: если init() не запустился за 8 сек — показать ошибку
+    setTimeout(function() {
+      if (window._appStarted) return;
+      var overlay = document.getElementById('loading-overlay');
+      if (overlay) overlay.style.display = 'none';
+      var sc = document.getElementById('screen-container');
+      if (!sc) return;
+      var errText = window._lastError || window._lastRejection || 'init() не запустился (JS-модуль не загрузился)';
+      sc.innerHTML = [
+        '<div style="padding:32px 20px;font-family:Inter,sans-serif">',
+        '<div style="font-size:28px;text-align:center;margin-bottom:12px">❌</div>',
+        '<div style="font-weight:600;font-size:16px;margin-bottom:6px;text-align:center">Ошибка загрузки</div>',
+        '<div style="color:#999;font-size:13px;text-align:center;margin-bottom:16px">Детали ошибки:</div>',
+        '<pre style="background:#f5f5f5;border-radius:8px;padding:12px;font-size:11px;white-space:pre-wrap;word-break:break-all;color:#333">',
+        errText,
+        '</pre>',
+        '<div style="color:#bbb;font-size:11px;margin-top:12px;text-align:center">',
+        'window.supabase: ' + (typeof window.supabase) + '<br>',
+        'initData: ' + (window.Telegram?.WebApp?.initData ? 'OK (' + window.Telegram.WebApp.initData.length + ' chars)' : 'missing'),
+        '</div>',
+        '</div>',
+      ].join('');
+    }, 8000);
+  </script>
+
   <link rel="stylesheet" href="css/style.css">
 
   <style>
@@ -52,50 +94,21 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
-
-  <script>
-    // Глобальный watchdog: если init() не отработал за 15 сек — показать ошибку
-    window._appStarted = false;
-    setTimeout(function() {
-      if (!window._appStarted) {
-        var overlay = document.getElementById('loading-overlay');
-        if (overlay) overlay.style.display = 'none';
-        var container = document.getElementById('screen-container');
-        if (container) container.innerHTML = '<div style="padding:40px 20px;text-align:center;font-family:Inter,sans-serif"><div style="font-size:32px;margin-bottom:12px">❌</div><div style="font-weight:600;margin-bottom:8px">Ошибка загрузки</div><div style="color:#999;font-size:14px">Перезапустите приложение</div><div id="err-detail" style="color:#bbb;font-size:12px;margin-top:8px"></div></div>';
-      }
-    }, 15000);
-
-    // Перехват JS-ошибок для отладки
-    window.onerror = function(msg, src, line, col, err) {
-      console.error('[app-error]', msg, src, line, col);
-      var el = document.getElementById('err-detail');
-      if (el) el.textContent = msg + ' (' + (src || '').split('/').pop() + ':' + line + ')';
-    };
-    window.addEventListener('unhandledrejection', function(e) {
-      console.error('[app-rejection]', e.reason);
-    });
-  </script>
 </head>
 <body>
-  <!-- Оверлей загрузки (скрывается после аутентификации) -->
   <div id="loading-overlay">
     <div class="loading-spinner"></div>
     <div class="loading-text">Загрузка...</div>
   </div>
 
-  <!-- Контейнер приложения -->
   <div id="app">
-    <!-- Переключатель режима (только для debug в браузере, скрыт по умолчанию) -->
     <div id="mode-switcher" style="display: none;">
       <button id="mode-client" class="mode-btn active">Клиент</button>
       <button id="mode-master" class="mode-btn">Мастер</button>
     </div>
-
-    <!-- Контейнер экранов -->
     <div id="screen-container"></div>
   </div>
 
-  <!-- JS-модули -->
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
