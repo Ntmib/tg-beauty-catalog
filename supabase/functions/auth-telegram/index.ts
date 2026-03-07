@@ -18,9 +18,30 @@
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { create, getNumericDate } from "https://deno.land/x/djwt@v3.0.1/mod.ts";
 import { verifyInitData, parseUserFromInitData } from "../_shared/telegram.ts";
 import { decryptToken } from "../_shared/crypto.ts";
+
+// ── Нативное создание JWT через WebCrypto (без djwt) ────────────────────────
+function b64url(str: string): string {
+  return btoa(unescape(encodeURIComponent(str)))
+    .replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+}
+function b64urlBytes(bytes: Uint8Array): string {
+  let s = "";
+  for (const b of bytes) s += String.fromCharCode(b);
+  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+}
+async function signJWT(payload: Record<string, unknown>, secret: string): Promise<string> {
+  const header = b64url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
+  const body   = b64url(JSON.stringify(payload));
+  const data   = `${header}.${body}`;
+  const key = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" }, false, ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(data));
+  return `${data}.${b64urlBytes(new Uint8Array(sig))}`;
+}
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -160,25 +181,18 @@ Deno.serve(async (req) => {
     }
 
     // ── Генерируем JWT ────────────────────────────────────────────────
-    const key = await crypto.subtle.importKey(
-      "raw",
-      new TextEncoder().encode(JWT_SECRET),
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["sign", "verify"],
-    );
-
-    const payload = {
+    const now = Math.floor(Date.now() / 1000);
+    const jwtPayload = {
       iss: "supabase",
-      iat: getNumericDate(0),
-      exp: getNumericDate(60 * 60 * 24 * 7), // 7 дней
+      iat: now,
+      exp: now + 60 * 60 * 24 * 7, // 7 дней
       sub: String(telegramId),
       role: "authenticated",
       app_role: role,
       app_master_id: masterId,
     };
 
-    const token = await create({ alg: "HS256", typ: "JWT" }, payload, key);
+    const token = await signJWT(jwtPayload, JWT_SECRET);
 
     return json({
       access_token: token,
