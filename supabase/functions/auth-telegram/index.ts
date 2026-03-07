@@ -19,7 +19,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { create, getNumericDate } from "https://deno.land/x/djwt@v3.0.1/mod.ts";
-import { verifyInitData, parseUserFromInitData, decryptToken as _unused } from "../_shared/telegram.ts";
+import { verifyInitData, parseUserFromInitData } from "../_shared/telegram.ts";
 import { decryptToken } from "../_shared/crypto.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;

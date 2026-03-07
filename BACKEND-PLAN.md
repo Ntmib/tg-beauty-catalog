@@ -542,55 +542,62 @@ created_at   TIMESTAMPTZ DEFAULT now()
 
 ## Порядок разработки
 
-### Этап 1: Supabase — Инфраструктура
-- [ ] Создать проект Supabase
-- [ ] SQL: создать все 10 таблиц (включая admins)
-- [ ] Настроить RLS политики для всех таблиц
-- [ ] Создать Supabase Storage buckets: `portfolio` (public), `logos` (public)
-- [ ] Настроить политики Storage (мастер загружает только в свою папку `/{master_id}/`)
-- [ ] Добавить seed-данные для тестирования
+### Этап 1: Supabase — Инфраструктура ✅ ВЫПОЛНЕН
+- [x] Создать проект Supabase (zbxbeagmqmnijkjhhcgp)
+- [x] SQL: создать все 10 таблиц (включая admins)
+- [x] Настроить RLS политики для всех таблиц
+- [x] Создать Supabase Storage buckets: `portfolio` (public), `logos` (public)
+- [x] Настроить политики Storage (мастер загружает только в свою папку `/{master_id}/`)
+- [x] Добавить seed-данные для тестирования (supabase/seed/)
 
-### Этап 2: VPS — HTTPS + webhook сервер
-- [ ] Купить домен, настроить A-запись → 193.42.124.57
-- [ ] Установить nginx на VPS
-- [ ] Получить SSL-сертификат Let's Encrypt (certbot)
-- [ ] Написать Python/aiohttp сервер (`/webhook/bot{id}`, `/notify`, `/health`)
-- [ ] Реализовать AES-256 расшифровку токена
-- [ ] Обработчики: /start, /start admin, /start from_app, /help, обычное сообщение
-- [ ] Настроить systemd-сервис для автозапуска
-- [ ] Написать cron-скрипт check_subscriptions.py
-- [ ] Настроить crontab: 02:00 каждую ночь
+### Этап 2: VPS — HTTPS + webhook сервер ✅ ВЫПОЛНЕН
+- [x] Купить домен, настроить A-запись → 193.42.124.57 (beauty.mcdenil.com)
+- [x] Установить nginx на VPS
+- [x] Получить SSL-сертификат Let's Encrypt (certbot)
+- [x] Написать Python/aiohttp сервер (`/webhook/bot{id}`, `/notify`, `/health`)
+- [x] Реализовать AES-256 расшифровку токена
+- [x] Обработчики: /start, /start admin, /start from_app, /help, обычное сообщение
+- [x] Настроить systemd-сервис (tg-beauty-catalog) для автозапуска
+- [x] Написать cron-скрипт check_subscriptions.py
+- [x] Настроить crontab: 02:00 каждую ночь
 
-### Этап 3: Edge Functions — Auth + Bot Connect
-- [ ] `auth/telegram`: двухрежимная валидация (platform / master token)
-- [ ] `bots/connect`: getMe → encrypt → setWebhook + все setChat* методы
-- [ ] `bots/disconnect`: deleteWebhook + очистка БД
-- [ ] `services/check-limit`: счётчик активных услуг vs план
+### Этап 3: Edge Functions — Auth + Bot Connect ✅ ВЫПОЛНЕН
+- [x] `auth-telegram`: двухрежимная валидация (platform / master token) — исправлен баг с импортом
+- [x] `bots-connect`: getMe → encrypt → setWebhook + все setChat* методы
+- [x] `bots-disconnect`: deleteWebhook + очистка БД
+- [x] `services-check-limit`: счётчик активных услуг vs план
+- [x] `bookings-notify`: уведомление мастера о новой записи
 
-### Этап 4: Frontend → Supabase
-- [ ] Добавить Supabase JS SDK (CDN)
-- [ ] Заменить `data.js` на реальные Supabase-запросы
-- [ ] Мастер: сохранение профиля, услуг, расписания, портфолио
-- [ ] Клиент: чтение услуг/портфолио через RLS
-- [ ] Загрузка фото в Supabase Storage
-- [ ] Экран онбординга Шаг 0 (подключение бота)
+### Этап 4: Frontend → Supabase ✅ ВЫПОЛНЕН
+- [x] Добавить Supabase JS SDK (esm.sh CDN в supabase.js)
+- [x] Создать auth.js: authenticate() → auth-telegram Edge Function
+- [x] Создать api.js: полный CRUD с in-memory кешем
+- [x] Заменить все экраны с hardcoded data.js на Supabase
+- [x] Мастер: сохранение профиля, услуг, расписания, портфолио
+- [x] Клиент: чтение услуг/портфолио через RLS
+- [x] Загрузка фото в Supabase Storage
+- [x] Экран онбординга Шаг 0 (подключение бота через bots-connect)
+- [x] Задеплоено на Vercel: https://tg-app-khaki.vercel.app
 
-### Этап 5: Монетизация
-- [ ] Edge Function: `payments/yookassa/create` + `/webhook`
-- [ ] Edge Function: `payments/stars/create` + обработка pre_checkout
-- [ ] UI выбора плана в дашборде мастера
-- [ ] Ограничения по плану в UI (кнопка добавить услугу disabled + подсказка)
+### Этап 5: Монетизация ⏳ СЛЕДУЮЩИЙ
+- [ ] Edge Function: `payments/yookassa/create` — создание платежа YooKassa
+- [ ] Edge Function: `payments/yookassa/webhook` — обработка успешной оплаты
+- [ ] Edge Function: `payments/stars/create` — отправка Stars инвойса через платформенного бота
+- [ ] Edge Function: `payments/stars/webhook` — обработка successful_payment
+- [ ] UI выбора плана в дашборде мастера (экран plan-select)
+- [ ] Ограничения по плану в UI (кнопка "Добавить услугу" disabled + подсказка)
 - [ ] Замочки на услугах is_over_limit в master-services.js
 - [ ] Telegram-уведомление мастеру после успешной оплаты
-- [ ] Telegram-уведомление Дмитрию после каждой оплаты
+- [ ] Telegram-уведомление Дмитрию (@ADMIN_TELEGRAM_ID) после каждой оплаты
+- [ ] VPS: обработка pre_checkout_query от Stars в webhook-сервере
 
-### Этап 6: White-Label
+### Этап 6: White-Label ⏳ ПОСЛЕ МОНЕТИЗАЦИИ
 - [ ] Экран выбора темы (только premium)
-- [ ] Загрузка логотипа через Supabase Storage
+- [ ] Загрузка логотипа через Supabase Storage (bucket: logos)
 - [ ] Динамическое применение CSS-переменных из таблицы themes
 - [ ] Убирать/показывать "Powered by" в зависимости от плана
 
-### Этап 7: Admin-страница для Дмитрия
+### Этап 7: Admin-страница для Дмитрия ⏳ ПОСЛЕ МОНЕТИЗАЦИИ
 - [ ] Отдельная страница `/admin` на Vercel
 - [ ] Telegram Login Widget для аутентификации
 - [ ] Edge Function `admin/stats` с метриками
