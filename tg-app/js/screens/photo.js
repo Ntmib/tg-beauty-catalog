@@ -3,23 +3,28 @@
  *
  * Открывается при тапе на фото в портфолио.
  * Показывает фото на весь экран с возможностью закрыть.
+ * params: { index: number, photos: Array }
  */
 
-import { portfolio } from '../data.js';
 import { goBack } from '../router.js';
 
 export const photoScreen = {
   render(params) {
-    const photo = portfolio[params.index] || portfolio[0];
+    const photos = params.photos || [];
+    const photo = photos[params.index] || photos[0] || {};
+    const total = photos.length;
+
+    const imgHtml = photo.image_url
+      ? `<img src="${photo.image_url}" alt="Фото ${params.index + 1}"
+             style="width:100%;max-width:400px;aspect-ratio:1;object-fit:cover;border-radius:var(--radius-md);"
+             onerror="this.style.display='none'">`
+      : `<div style="width:100%;max-width:400px;aspect-ratio:1;border-radius:var(--radius-md);background:var(--tg-theme-secondary-bg-color,#f0f0f0);display:flex;align-items:center;justify-content:center;font-size:64px;">💅</div>`;
 
     return `
       <div class="screen-centered">
-        <div class="portfolio-placeholder ${photo.placeholder} fade-in"
-             style="width: 100%; max-width: 400px; aspect-ratio: 1; border-radius: var(--radius-md); font-size: 64px;">
-          ${photo.emoji}
-        </div>
+        ${imgHtml}
         <div class="caption mt text-center">
-          Фото ${params.index + 1} из ${portfolio.length}
+          Фото ${params.index + 1} из ${total}
         </div>
         <button class="btn btn-secondary mt" id="btn-close-photo">Закрыть</button>
       </div>
