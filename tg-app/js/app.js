@@ -1,16 +1,20 @@
 /**
  * Главный модуль приложения
  *
- * Инициализация Telegram SDK, регистрация экранов,
- * переключение режимов мастер/клиент, запуск роутера.
+ * Порядок инициализации:
+ * 1. Telegram SDK
+ * 2. Аутентификация (auth-telegram Edge Function)
+ * 3. Определение роли (master / client)
+ * 4. Регистрация экранов + роутер
+ * 5. Открытие начального экрана
  */
 
-import { initTelegram, getUser, getStartParam } from './telegram.js';
+import { initTelegram, getStartParam } from './telegram.js';
 import { initRouter, registerScreen, navigateToRoot } from './router.js';
-import { master } from './data.js';
+import { authenticate, getRole } from './auth.js';
 import { showOfferIfNeeded } from './screens/offer.js';
 
-// Импорт всех экранов
+// Экраны
 import { catalogScreen } from './screens/catalog.js';
 import { serviceScreen } from './screens/service.js';
 import { bookingScreen } from './screens/booking.js';
@@ -27,18 +31,28 @@ import { masterProfileScreen } from './screens/master-profile.js';
 import { serviceEditScreen } from './screens/service-edit.js';
 import { welcomeScreen, shouldShowWelcome } from './screens/welcome.js';
 
-// Текущий режим: 'client' или 'master'
-let currentMode = 'client';
-
 /** Запуск приложения */
 async function init() {
-  // 1. Инициализация Telegram SDK
+  // 1. Telegram SDK
   initTelegram();
 
-  // 2. Инициализация роутера
-  initRouter();
+  // 2. Показать загрузку пока идёт авторизация
+  showLoading();
 
-  // 3. Регистрация всех экранов
+  // 3. Аутентификация
+  const session = await authenticate();
+
+  // 4. Скрыть загрузку
+  hideLoading();
+
+  // Если авторизация не удалась — показать ошибку
+  if (!session) {
+    showError();
+    return;
+  }
+
+  // 5. Роутер + регистрация экранов
+  initRouter();
   registerScreen('catalog', catalogScreen);
   registerScreen('service', serviceScreen);
   registerScreen('booking', bookingScreen);
@@ -55,98 +69,94 @@ async function init() {
   registerScreen('service-edit', serviceEditScreen);
   registerScreen('welcome', welcomeScreen);
 
-  // 4. Определение режима
-  detectMode();
-
-  // 5. Настройка переключателя режимов (демо)
-  setupModeSwitcher();
-
-  // 6. Оффер для клиентов (один раз при первом открытии)
-  if (currentMode === 'client') {
-    await showOfferIfNeeded();
+  // Показать/скрыть переключатель режимов (только для debug в браузере)
+  if (session.debug) {
+    setupDebugModeSwitcher();
   }
 
-  // 7. Открыть начальный экран
-  openStartScreen();
+  // 6. Начальный экран
+  await openStartScreen();
 }
 
-/**
- * Определение режима: мастер или клиент
- *
- * В продакшене: сравниваем initData.user.id с masters.telegram_id
- * Сейчас: по умолчанию клиент, переключается вручную
- */
-function detectMode() {
-  const user = getUser();
-  const startParam = getStartParam();
+/** Определить начальный экран по роли */
+async function openStartScreen() {
+  const role = getRole();
 
-  // Если start_param начинается с 'admin' — мастер
-  if (startParam === 'admin') {
-    currentMode = 'master';
-  }
-
-  // Если user.id совпадает с мастером — мастер
-  if (user.id === master.telegram_id) {
-    currentMode = 'master';
-  }
-}
-
-/** Открыть стартовый экран в зависимости от режима */
-function openStartScreen() {
-  if (currentMode === 'master') {
-    if (!master.onboarding_done) {
+  if (role === 'master') {
+    const { getMasterRow } = await import('./api.js');
+    try {
+      const masterData = await getMasterRow();
+      if (!masterData.onboarding_done) {
+        navigateToRoot('onboarding');
+      } else {
+        navigateToRoot('dashboard');
+      }
+    } catch (e) {
+      console.error('[app] Ошибка загрузки мастера:', e);
       navigateToRoot('onboarding');
-    } else {
-      navigateToRoot('dashboard');
     }
   } else {
-    // Первый раз — приветствие, потом каталог
+    // Клиент
     if (shouldShowWelcome()) {
       navigateToRoot('welcome');
     } else {
+      await showOfferIfNeeded();
       navigateToRoot('catalog');
     }
   }
 }
 
-/** Настройка переключателя режимов (для демо) */
-function setupModeSwitcher() {
-  const clientBtn = document.getElementById('mode-client');
-  const masterBtn = document.getElementById('mode-master');
+// ============================================================
+// Утилиты загрузки
+// ============================================================
 
-  if (!clientBtn || !masterBtn) return;
+function showLoading() {
+  const el = document.getElementById('loading-overlay');
+  if (el) el.style.display = 'flex';
+}
 
-  // Обновить активное состояние
-  function updateButtons() {
-    clientBtn.classList.toggle('active', currentMode === 'client');
-    masterBtn.classList.toggle('active', currentMode === 'master');
+function hideLoading() {
+  const el = document.getElementById('loading-overlay');
+  if (!el) return;
+  el.style.opacity = '0';
+  setTimeout(() => { el.style.display = 'none'; el.style.opacity = '1'; }, 300);
+}
+
+function showError() {
+  const container = document.getElementById('screen-container');
+  if (container) {
+    container.innerHTML = `
+      <div class="empty-state" style="padding-top: 40vh;">
+        <div class="empty-state-icon">❌</div>
+        <div class="empty-state-title">Ошибка авторизации</div>
+        <div class="empty-state-text">Перезапустите приложение через Telegram</div>
+      </div>
+    `;
   }
+}
 
-  updateButtons();
+// ============================================================
+// Debug: переключатель режимов (только браузер)
+// ============================================================
 
-  clientBtn.addEventListener('click', () => {
-    if (currentMode === 'client') return;
-    currentMode = 'client';
-    updateButtons();
+function setupDebugModeSwitcher() {
+  const switcher = document.getElementById('mode-switcher');
+  if (!switcher) return;
+
+  switcher.style.display = 'flex';
+
+  switcher.querySelector('#mode-client')?.addEventListener('click', () => {
     navigateToRoot('catalog');
   });
 
-  masterBtn.addEventListener('click', () => {
-    if (currentMode === 'master') return;
-    currentMode = 'master';
-    updateButtons();
-    if (!master.onboarding_done) {
-      navigateToRoot('onboarding');
-    } else {
-      navigateToRoot('dashboard');
-    }
+  switcher.querySelector('#mode-master')?.addEventListener('click', async () => {
+    navigateToRoot('dashboard');
   });
 }
 
-/** Получить текущий режим */
+/** Получить режим (для совместимости) */
 export function getMode() {
-  return currentMode;
+  return getRole();
 }
 
-// Запуск при загрузке DOM
 document.addEventListener('DOMContentLoaded', init);

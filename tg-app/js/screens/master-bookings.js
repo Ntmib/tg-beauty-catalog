@@ -1,79 +1,71 @@
 /**
- * Экран М5: Записи (список для мастера)
+ * Экран М5: Записи мастера
  *
- * Показывает все записи с фильтрами:
- * Новые (pending), Все, Прошлые.
+ * Загружает записи из Supabase с возможностью подтвердить/отклонить.
  */
 
-import { bookings, formatDate } from '../data.js';
+import { formatDate } from '../data.js';
 import { hapticLight, hapticSuccess, hapticWarning, hideMainButton, confirm as tgConfirm } from '../telegram.js';
+import { getMasterBookings, updateBookingStatus } from '../api.js';
 
 export const masterBookingsScreen = {
   render() {
-    const pendingCount = bookings.filter(b => b.status === 'pending').length;
-
     return `
       <div class="page-title fade-in-up">Записи</div>
-
-      <!-- Табы-фильтры -->
       <div class="tabs fade-in-up delay-1" id="booking-tabs">
-        <button class="tab active" data-filter="new">Новые (${pendingCount})</button>
+        <button class="tab active" data-filter="new">Новые</button>
         <button class="tab" data-filter="all">Все</button>
         <button class="tab" data-filter="past">Прошлые</button>
       </div>
-
       <div id="bookings-content" class="fade-in-up delay-2" aria-live="polite">
-        ${renderBookingsList('new')}
+        <div class="caption text-center" style="padding: 40px 0;">Загрузка записей...</div>
       </div>
     `;
   },
 
-  onEnter(el) {
+  async onEnter(el) {
     hideMainButton();
 
-    // Переключение табов
+    let allBookings = await getMasterBookings().catch(() => []);
+
+    const render = (filter) => {
+      el.querySelector('#bookings-content').innerHTML = renderList(allBookings, filter);
+      setupActions(el, allBookings, render);
+    };
+
+    // Обновить счётчик табов
+    const pendingCount = allBookings.filter(b => b.status === 'pending').length;
+    el.querySelector('[data-filter="new"]').textContent = `Новые (${pendingCount})`;
+
+    render('new');
+
     el.querySelectorAll('.tab').forEach(tab => {
       tab.addEventListener('click', () => {
         hapticLight();
         el.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
-
-        const filter = tab.dataset.filter;
-        el.querySelector('#bookings-content').innerHTML = renderBookingsList(filter);
-        setupBookingActions(el);
+        render(tab.dataset.filter);
       });
     });
-
-    setupBookingActions(el);
   },
 };
 
-function renderBookingsList(filter) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
+function renderList(bookings, filter) {
   let filtered;
   if (filter === 'new') {
     filtered = bookings.filter(b => b.status === 'pending');
   } else if (filter === 'past') {
-    filtered = bookings.filter(b => b.status === 'completed' || b.status === 'cancelled_by_client');
+    filtered = bookings.filter(b => ['completed', 'cancelled_by_client', 'cancelled_by_master'].includes(b.status));
   } else {
     filtered = [...bookings];
   }
 
-  // Сортировка по дате
   filtered.sort((a, b) => a.booking_date.localeCompare(b.booking_date) || a.booking_time.localeCompare(b.booking_time));
 
   if (filtered.length === 0) {
-    return `
-      <div class="empty-state">
-        <div class="empty-state-icon">📋</div>
-        <div class="empty-state-text">Нет записей</div>
-      </div>
-    `;
+    return `<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">Нет записей</div></div>`;
   }
 
-  // Группировка по дате
   const grouped = {};
   filtered.forEach(b => {
     if (!grouped[b.booking_date]) grouped[b.booking_date] = [];
@@ -84,11 +76,7 @@ function renderBookingsList(filter) {
   Object.entries(grouped).forEach(([date, items]) => {
     html += `<div class="divider-text">${getDateLabel(date)}</div>`;
     items.forEach(b => {
-      const statusIcon = b.status === 'confirmed' ? '✅' :
-        b.status === 'pending' ? '⏳' :
-          b.status === 'completed' ? '✓' : '✗';
-      const statusClass = `status-${b.status === 'cancelled_by_client' ? 'cancelled' : b.status}`;
-
+      const statusIcon = b.status === 'confirmed' ? '✅' : b.status === 'pending' ? '⏳' : b.status === 'completed' ? '✓' : '✗';
       html += `
         <div class="card" data-booking-id="${b.id}">
           <div class="card-row">
@@ -107,17 +95,19 @@ function renderBookingsList(filter) {
       `;
     });
   });
-
   return html;
 }
 
-function setupBookingActions(el) {
+function setupActions(el, allBookings, rerender) {
   el.querySelectorAll('[data-action="confirm"]').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       hapticSuccess();
-      const card = btn.closest('.card');
-      card.querySelector('.card-actions').innerHTML = '<div class="status status-confirmed mt-sm">✅ Подтверждена</div>';
+      await updateBookingStatus(btn.dataset.id, 'confirmed').catch(console.error);
+      const booking = allBookings.find(b => b.id === btn.dataset.id);
+      if (booking) booking.status = 'confirmed';
+      const tab = el.querySelector('.tab.active')?.dataset.filter || 'new';
+      rerender(tab);
     });
   });
 
@@ -127,8 +117,11 @@ function setupBookingActions(el) {
       hapticWarning();
       const ok = await tgConfirm('Отклонить запись?');
       if (ok) {
-        btn.closest('.card').style.opacity = '0.4';
-        btn.closest('.card').style.pointerEvents = 'none';
+        await updateBookingStatus(btn.dataset.id, 'cancelled_by_master').catch(console.error);
+        const booking = allBookings.find(b => b.id === btn.dataset.id);
+        if (booking) booking.status = 'cancelled_by_master';
+        const tab = el.querySelector('.tab.active')?.dataset.filter || 'new';
+        rerender(tab);
       }
     });
   });
@@ -139,14 +132,8 @@ function getDateLabel(dateStr) {
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const date = new Date(dateStr + 'T00:00:00');
-
-  if (date.toDateString() === today.toDateString()) return `Сегодня, ${date.getDate()} ${getMonth(date)}`;
-  if (date.toDateString() === tomorrow.toDateString()) return `Завтра, ${date.getDate()} ${getMonth(date)}`;
+  const months = ['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
+  if (date.toDateString() === today.toDateString()) return `Сегодня, ${date.getDate()} ${months[date.getMonth()]}`;
+  if (date.toDateString() === tomorrow.toDateString()) return `Завтра, ${date.getDate()} ${months[date.getMonth()]}`;
   return formatDate(dateStr);
-}
-
-function getMonth(date) {
-  const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-    'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
-  return months[date.getMonth()];
 }

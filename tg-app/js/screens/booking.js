@@ -1,112 +1,109 @@
 /**
  * Экран К4: Выбор даты и времени
  *
- * Горизонтальный скролл дат (14 дней),
- * сетка слотов (30-мин шаг),
- * сводка выбора, MainButton "Подтвердить запись".
+ * Загружает расписание мастера из Supabase.
+ * Проверяет занятые слоты через getBookedSlots().
  */
 
-import { master, services, bookings, formatPrice, formatDuration, formatDate, getEndTime, toDateStr } from '../data.js';
+import { formatPrice, formatDuration, formatDate, getEndTime, toDateStr } from '../data.js';
 import { navigateTo } from '../router.js';
 import { showMainButton, disableMainButton, enableMainButton, hapticSelection, hapticLight, enableClosingConfirmation } from '../telegram.js';
+import { getServiceById, getSchedule, getBookedSlots, createBooking, notifyMasterAboutBooking } from '../api.js';
 
 let selectedDate = null;
 let selectedTime = null;
+let _schedule = null;
+let _service = null;
 
 export const bookingScreen = {
   render(params) {
-    const service = services.find(s => s.id === params.serviceId);
-    if (!service) return '<div class="empty-state"><div class="empty-state-title">Услуга не найдена</div></div>';
-
-    // Генерация дат на 14 дней вперёд
-    const dates = generateDates(14);
-    const dateItems = dates.map((d, i) => {
-      const isWorkDay = master.schedule.work_days.includes(d.dayOfWeek);
-      return `
-        <button class="date-item ${!isWorkDay ? 'disabled' : ''}" data-date="${d.dateStr}" ${!isWorkDay ? 'disabled' : ''}>
-          <span class="date-weekday">${d.weekdayShort}</span>
-          <span class="date-number">${d.day}</span>
-          <span class="date-month">${d.monthShort}</span>
-        </button>
-      `;
-    }).join('');
-
     return `
       <div class="page-title fade-in-up">Выберите дату</div>
-
-      <!-- Горизонтальный скролл дат -->
-      <div class="date-scroll fade-in-up delay-1" id="date-scroll">
-        ${dateItems}
+      <div id="date-scroll-wrap">
+        <div class="caption text-center" style="padding: 16px 0;">Загрузка...</div>
       </div>
-
-      <!-- Время -->
       <div class="section-title fade-in-up delay-2" id="time-title">Выберите время</div>
       <div id="time-grid-container" class="fade-in-up delay-2" aria-live="polite">
         <div class="caption text-center" style="padding: var(--space-5) 0;">
           Выберите дату, чтобы увидеть свободное время
         </div>
       </div>
-
-      <!-- Сводка (скрыта до выбора) -->
       <div id="booking-summary" style="display: none;" class="booking-summary fade-in-up" aria-live="polite">
-        <div class="booking-summary-title" id="summary-service">💅 ${service.title}</div>
+        <div class="booking-summary-title" id="summary-service"></div>
         <div class="booking-summary-details" id="summary-details"></div>
       </div>
-
-      <!-- Кнопка для браузера -->
-      <button class="btn btn-primary mt-lg" id="btn-confirm-booking"
-              style="display: none;">
+      <button class="btn btn-primary mt-lg" id="btn-confirm-booking" style="display: none;">
         Подтвердить запись
       </button>
     `;
   },
 
-  onEnter(el, params) {
-    const service = services.find(s => s.id === params.serviceId);
-    if (!service) return;
-
+  async onEnter(el, params) {
     selectedDate = null;
     selectedTime = null;
 
-    // Включить подтверждение закрытия
+    // Загрузить услугу и расписание
+    [_service, _schedule] = await Promise.all([
+      getServiceById(params.serviceId).catch(() => null),
+      getSchedule().catch(() => ({ work_days: [1,2,3,4,5], start_hour: 10, end_hour: 19, break_start: 13, break_end: 14 })),
+    ]);
+
+    if (!_service) {
+      el.querySelector('#date-scroll-wrap').innerHTML = `
+        <div class="empty-state"><div class="empty-state-title">Услуга не найдена</div></div>
+      `;
+      return;
+    }
+
+    el.querySelector('#summary-service').textContent = `💅 ${_service.title}`;
     enableClosingConfirmation();
 
-    // MainButton (неактивна)
-    showMainButton('Подтвердить запись', () => {
-      if (selectedDate && selectedTime) {
-        navigateTo('success', {
-          serviceId: service.id,
-          date: selectedDate,
-          time: selectedTime,
-        });
-      }
-    });
+    showMainButton('Подтвердить запись', () => confirmBooking(el));
     disableMainButton();
 
-    // Клики по датам
-    el.querySelectorAll('.date-item:not(.disabled)').forEach(item => {
-      item.addEventListener('click', () => {
-        hapticSelection();
+    // Рендер дат
+    renderDates(el);
 
-        // Убрать active с текущей
-        el.querySelectorAll('.date-item.active').forEach(d => d.classList.remove('active'));
-        item.classList.add('active');
-
-        selectedDate = item.dataset.date;
-        selectedTime = null;
-
-        // Генерировать слоты
-        renderTimeSlots(el, service);
-        updateSummary(el, service);
-      });
-    });
+    el.querySelector('#btn-confirm-booking')?.addEventListener('click', () => confirmBooking(el));
   },
 };
 
-/** Генерация слотов времени */
-function renderTimeSlots(el, service) {
+function renderDates(el) {
+  const dates = generateDates(14);
+  const dateItems = dates.map(d => {
+    const isWorkDay = _schedule.work_days.includes(d.dayOfWeek);
+    return `
+      <button class="date-item ${!isWorkDay ? 'disabled' : ''}" data-date="${d.dateStr}" ${!isWorkDay ? 'disabled' : ''}>
+        <span class="date-weekday">${d.weekdayShort}</span>
+        <span class="date-number">${d.day}</span>
+        <span class="date-month">${d.monthShort}</span>
+      </button>
+    `;
+  }).join('');
+
+  el.querySelector('#date-scroll-wrap').innerHTML = `
+    <div class="date-scroll fade-in-up delay-1" id="date-scroll">${dateItems}</div>
+  `;
+
+  el.querySelectorAll('.date-item:not(.disabled)').forEach(item => {
+    item.addEventListener('click', async () => {
+      hapticSelection();
+      el.querySelectorAll('.date-item.active').forEach(d => d.classList.remove('active'));
+      item.classList.add('active');
+      selectedDate = item.dataset.date;
+      selectedTime = null;
+      await renderTimeSlots(el);
+      updateSummary(el);
+    });
+  });
+}
+
+async function renderTimeSlots(el) {
   const container = el.querySelector('#time-grid-container');
-  const slots = generateSlots(selectedDate, service.duration);
+  container.innerHTML = '<div class="caption text-center" style="padding:16px 0;">Проверяем занятые слоты...</div>';
+
+  const bookedSlots = await getBookedSlots(selectedDate).catch(() => []);
+  const slots = generateSlots(selectedDate, _service.duration, _schedule, bookedSlots);
 
   if (slots.length === 0) {
     container.innerHTML = `
@@ -128,42 +125,62 @@ function renderTimeSlots(el, service) {
     </div>
   `;
 
-  // Клики по слотам
   container.querySelectorAll('.time-slot:not(.disabled)').forEach(slot => {
     slot.addEventListener('click', () => {
       hapticSelection();
       container.querySelectorAll('.time-slot.active').forEach(s => s.classList.remove('active'));
       slot.classList.add('active');
       selectedTime = slot.dataset.time;
-      updateSummary(el, service);
+      updateSummary(el);
       enableMainButton();
 
-      // Показать кнопку для браузера
       const btn = el.querySelector('#btn-confirm-booking');
-      if (btn) {
-        btn.style.display = 'block';
-        btn.onclick = () => {
-          hapticLight();
-          navigateTo('success', {
-            serviceId: service.id,
-            date: selectedDate,
-            time: selectedTime,
-          });
-        };
-      }
+      if (btn) btn.style.display = 'block';
     });
   });
 }
 
-/** Обновить сводку */
-function updateSummary(el, service) {
+async function confirmBooking(el) {
+  if (!selectedDate || !selectedTime || !_service) return;
+
+  const btn = el.querySelector('#btn-confirm-booking');
+  if (btn) { btn.disabled = true; btn.textContent = 'Оформляем...'; }
+
+  try {
+    const booking = await createBooking({
+      serviceId: _service.id,
+      date: selectedDate,
+      time: selectedTime,
+      duration: _service.duration,
+    });
+
+    // Уведомить мастера (не ждём)
+    notifyMasterAboutBooking(booking.id);
+
+    navigateTo('success', {
+      serviceId: _service.id,
+      serviceTitle: _service.title,
+      servicePrice: _service.price,
+      serviceDuration: _service.duration,
+      date: selectedDate,
+      time: selectedTime,
+    });
+  } catch (e) {
+    console.error('[booking] Ошибка записи:', e);
+    if (btn) { btn.disabled = false; btn.textContent = 'Подтвердить запись'; }
+    window.alert && window.alert('Не удалось создать запись. Попробуйте ещё раз.');
+  }
+}
+
+function updateSummary(el) {
   const summary = el.querySelector('#booking-summary');
   const details = el.querySelector('#summary-details');
+  if (!summary || !details) return;
 
   if (selectedDate && selectedTime) {
     summary.style.display = 'block';
-    const endTime = getEndTime(selectedTime, service.duration);
-    details.textContent = `${formatDate(selectedDate)} · ${selectedTime} - ${endTime} · ${formatPrice(service.price)}`;
+    const endTime = getEndTime(selectedTime, _service.duration);
+    details.textContent = `${formatDate(selectedDate)} · ${selectedTime} - ${endTime} · ${formatPrice(_service.price)}`;
   } else if (selectedDate) {
     summary.style.display = 'block';
     details.textContent = `${formatDate(selectedDate)} · Выберите время`;
@@ -172,20 +189,15 @@ function updateSummary(el, service) {
   }
 }
 
-/** Генерировать даты на N дней вперёд */
 function generateDates(count) {
   const days = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
   const months = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
   const result = [];
-
   for (let i = 1; i <= count; i++) {
     const date = new Date();
     date.setDate(date.getDate() + i);
-
-    // dayOfWeek: 1=Пн ... 7=Вс (ISO)
-    let dow = date.getDay(); // 0=Вс
+    let dow = date.getDay();
     dow = dow === 0 ? 7 : dow;
-
     result.push({
       dateStr: toDateStr(date),
       weekdayShort: days[date.getDay()],
@@ -197,55 +209,36 @@ function generateDates(count) {
   return result;
 }
 
-/** Генерировать слоты времени для выбранной даты */
-function generateSlots(dateStr, serviceDuration) {
-  const { start_hour, end_hour, break_start, break_end } = master.schedule;
+function generateSlots(dateStr, serviceDuration, schedule, bookedSlots) {
+  const { start_hour, end_hour, break_start, break_end } = schedule;
+  const step = 30;
   const slots = [];
-  const step = 30; // 30 минут
 
   for (let h = start_hour; h < end_hour; h++) {
     for (let m = 0; m < 60; m += step) {
       const startMin = h * 60 + m;
       const endMin = startMin + serviceDuration;
-
-      // Не выходить за рабочие часы
       if (endMin > end_hour * 60) continue;
 
-      // Не попадать на обед
       if (break_start !== undefined && break_end !== undefined) {
-        const breakStartMin = break_start * 60;
-        const breakEndMin = break_end * 60;
-        if (startMin < breakEndMin && endMin > breakStartMin) continue;
+        const bsMin = break_start * 60;
+        const beMin = break_end * 60;
+        if (startMin < beMin && endMin > bsMin) continue;
       }
 
       const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-
-      // Проверка на существующие записи
-      const isBooked = bookings.some(b =>
-        b.booking_date === dateStr &&
-        b.status !== 'cancelled_by_client' &&
-        b.status !== 'cancelled_by_master' &&
+      const isBooked = bookedSlots.some(b =>
         isTimeOverlap(timeStr, serviceDuration, b.booking_time, b.duration)
       );
-
-      slots.push({
-        time: timeStr,
-        available: !isBooked,
-      });
+      slots.push({ time: timeStr, available: !isBooked });
     }
   }
   return slots;
 }
 
-/** Проверка пересечения времени */
-function isTimeOverlap(time1, dur1, time2, dur2) {
-  const toMin = (t) => {
-    const [h, m] = t.split(':').map(Number);
-    return h * 60 + m;
-  };
-  const start1 = toMin(time1);
-  const end1 = start1 + dur1;
-  const start2 = toMin(time2);
-  const end2 = start2 + dur2;
-  return start1 < end2 && end1 > start2;
+function isTimeOverlap(t1, dur1, t2, dur2) {
+  const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+  const s1 = toMin(t1), e1 = s1 + dur1;
+  const s2 = toMin(t2), e2 = s2 + dur2;
+  return s1 < e2 && e1 > s2;
 }

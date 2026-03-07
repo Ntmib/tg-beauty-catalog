@@ -1,18 +1,37 @@
 /**
  * Экран М2: Управление услугами
  *
- * Список услуг мастера с возможностью редактировать и добавить новую.
+ * Список услуг мастера из Supabase с возможностью редактировать.
  */
 
-import { services, formatPrice, formatDuration } from '../data.js';
+import { formatPrice, formatDuration } from '../data.js';
 import { navigateTo } from '../router.js';
 import { hapticLight, hideMainButton } from '../telegram.js';
+import { getServices, clearCache } from '../api.js';
 
 export const masterServicesScreen = {
   render() {
-    const serviceCards = services
-      .filter(s => s.is_active)
-      .map((s, i) => `
+    return `
+      <div class="page-title fade-in-up">Услуги</div>
+      <div id="services-list">
+        <div class="caption text-center" style="padding: 40px 0;">Загрузка...</div>
+      </div>
+      <button class="btn btn-outline btn-full mt fade-in-up delay-5" id="btn-add-service">
+        + Добавить услугу
+      </button>
+    `;
+  },
+
+  async onEnter(el) {
+    hideMainButton();
+
+    // Принудительное обновление при каждом входе
+    const services = await getServices(true).catch(() => []);
+    const activeServices = services.filter(s => s.is_active);
+
+    const serviceCards = activeServices.map((s, i) => {
+      const overLimit = s.is_over_limit ? `<div class="status status-pending mt-sm">🔒 Скрыта (лимит плана)</div>` : '';
+      return `
         <div class="card card-clickable fade-in-up delay-${Math.min(i + 1, 6)}" data-service-id="${s.id}">
           <div class="card-row">
             <div class="card-icon">💅</div>
@@ -22,24 +41,15 @@ export const masterServicesScreen = {
             </div>
             <div class="card-chevron">›</div>
           </div>
+          ${overLimit}
         </div>
-      `).join('');
+      `;
+    }).join('');
 
-    return `
-      <div class="page-title fade-in-up">Услуги</div>
-      <div id="services-list">
-        ${serviceCards}
-      </div>
-      <button class="btn btn-outline btn-full mt fade-in-up delay-5" id="btn-add-service">
-        + Добавить услугу
-      </button>
-    `;
-  },
+    el.querySelector('#services-list').innerHTML = activeServices.length > 0
+      ? serviceCards
+      : `<div class="empty-state"><div class="empty-state-text">Добавьте первую услугу</div></div>`;
 
-  onEnter(el) {
-    hideMainButton();
-
-    // Клик по услуге → редактирование
     el.querySelectorAll('[data-service-id]').forEach(card => {
       card.addEventListener('click', () => {
         hapticLight();
@@ -47,7 +57,6 @@ export const masterServicesScreen = {
       });
     });
 
-    // Добавить новую услугу
     el.querySelector('#btn-add-service')?.addEventListener('click', () => {
       hapticLight();
       navigateTo('service-edit', { serviceId: null });

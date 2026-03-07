@@ -1,20 +1,30 @@
 /**
  * Экран М2.1: Редактирование / добавление услуги
  *
- * Форма: название, цена, длительность, описание.
- * Кнопка удаления (для существующих).
+ * Форма с сохранением в Supabase.
  */
 
-import { services, formatPrice, formatDuration } from '../data.js';
+import { formatDuration, formatPrice } from '../data.js';
 import { goBack } from '../router.js';
 import { showMainButton, hapticSuccess, hapticWarning, confirm as tgConfirm } from '../telegram.js';
+import { getServiceById, saveService, deleteService, clearCache } from '../api.js';
 
 const durationOptions = [30, 60, 90, 120, 150, 180];
 
 export const serviceEditScreen = {
   render(params) {
-    const service = params.serviceId ? services.find(s => s.id === params.serviceId) : null;
+    return `
+      <div id="service-edit-content">
+        <div class="caption text-center" style="padding: 40px 0;">Загрузка...</div>
+      </div>
+    `;
+  },
+
+  async onEnter(el, params) {
+    const service = params.serviceId ? await getServiceById(params.serviceId).catch(() => null) : null;
     const isNew = !service;
+
+    let selectedDuration = service?.duration || null;
 
     const durationChips = durationOptions.map(d => `
       <button class="chip ${service && service.duration === d ? 'active' : ''}" data-duration="${d}">
@@ -22,7 +32,7 @@ export const serviceEditScreen = {
       </button>
     `).join('');
 
-    return `
+    el.querySelector('#service-edit-content').innerHTML = `
       <div class="page-title fade-in-up">${isNew ? 'Новая услуга' : 'Редактировать услугу'}</div>
 
       <div class="input-group fade-in-up delay-1">
@@ -41,9 +51,7 @@ export const serviceEditScreen = {
 
       <div class="input-group fade-in-up delay-3">
         <label class="input-label">Длительность</label>
-        <div class="chips" id="duration-chips">
-          ${durationChips}
-        </div>
+        <div class="chips" id="duration-chips">${durationChips}</div>
       </div>
 
       <div class="input-group fade-in-up delay-4">
@@ -58,17 +66,11 @@ export const serviceEditScreen = {
         </button>
       ` : ''}
 
-      <!-- Кнопка для браузера -->
       <button class="btn btn-primary btn-full mt fade-in-up delay-5" id="btn-save-service">
         Сохранить
       </button>
+      <div id="save-error" class="caption text-center" style="color:var(--color-error,red);display:none;margin-top:8px;"></div>
     `;
-  },
-
-  onEnter(el, params) {
-    let selectedDuration = null;
-    const service = params.serviceId ? services.find(s => s.id === params.serviceId) : null;
-    if (service) selectedDuration = service.duration;
 
     // Выбор длительности
     el.querySelectorAll('#duration-chips .chip').forEach(chip => {
@@ -79,14 +81,53 @@ export const serviceEditScreen = {
       });
     });
 
-    const save = () => {
-      hapticSuccess();
-      // В продакшене — сохранение в Supabase
-      goBack();
+    const save = async () => {
+      const title = el.querySelector('#edit-title').value.trim();
+      const price = parseInt(el.querySelector('#edit-price').value);
+      const description = el.querySelector('#edit-desc').value.trim();
+
+      if (!title) {
+        el.querySelector('#save-error').textContent = 'Введите название услуги';
+        el.querySelector('#save-error').style.display = 'block';
+        return;
+      }
+      if (!price || price <= 0) {
+        el.querySelector('#save-error').textContent = 'Введите цену';
+        el.querySelector('#save-error').style.display = 'block';
+        return;
+      }
+      if (!selectedDuration) {
+        el.querySelector('#save-error').textContent = 'Выберите длительность';
+        el.querySelector('#save-error').style.display = 'block';
+        return;
+      }
+
+      el.querySelector('#save-error').style.display = 'none';
+      const saveBtn = el.querySelector('#btn-save-service');
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Сохранение...';
+
+      try {
+        await saveService({
+          id: service?.id || null,
+          title,
+          price,
+          duration: selectedDuration,
+          description: description || null,
+        });
+        clearCache();
+        hapticSuccess();
+        goBack();
+      } catch (e) {
+        console.error('[service-edit] Ошибка сохранения:', e);
+        el.querySelector('#save-error').textContent = e.message || 'Ошибка сохранения';
+        el.querySelector('#save-error').style.display = 'block';
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Сохранить';
+      }
     };
 
     showMainButton('Сохранить', save);
-
     el.querySelector('#btn-save-service')?.addEventListener('click', save);
 
     // Удаление
@@ -94,8 +135,14 @@ export const serviceEditScreen = {
       hapticWarning();
       const ok = await tgConfirm('Удалить услугу?');
       if (ok) {
-        hapticSuccess();
-        goBack();
+        try {
+          await deleteService(service.id);
+          clearCache();
+          hapticSuccess();
+          goBack();
+        } catch (e) {
+          console.error('[service-edit] Ошибка удаления:', e);
+        }
       }
     });
   },

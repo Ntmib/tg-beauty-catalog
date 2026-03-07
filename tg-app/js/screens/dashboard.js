@@ -1,17 +1,43 @@
 /**
  * Экран М1: Дашборд мастера
  *
- * Главный экран мастера: ссылка на бота, ближайшие записи,
- * быстрые действия (услуги, фото, график, профиль).
+ * Загружает данные из Supabase: записи, профиль, услуги, портфолио.
  */
 
-import { master, services, portfolio, bookings, formatDate } from '../data.js';
+import { formatDate } from '../data.js';
 import { navigateTo } from '../router.js';
 import { hapticLight, hapticSuccess, hapticWarning, hideMainButton, confirm as tgConfirm } from '../telegram.js';
+import { getMasterRow, getMasterProfile, getServices, getPortfolio, getMasterBookings, updateBookingStatus } from '../api.js';
 
 export const dashboardScreen = {
   render() {
-    // Ближайшие записи (pending и confirmed на ближайшие дни)
+    return `
+      <div class="fade-in-up">
+        <div class="page-title" id="dash-greeting">Дашборд</div>
+      </div>
+      <div id="dash-content">
+        <div class="caption text-center" style="padding: 40px 0;">Загрузка...</div>
+      </div>
+    `;
+  },
+
+  async onEnter(el) {
+    hideMainButton();
+
+    const [masterRow, profile, services, portfolio, bookings] = await Promise.all([
+      getMasterRow().catch(() => null),
+      getMasterProfile().catch(() => null),
+      getServices().catch(() => []),
+      getPortfolio().catch(() => []),
+      getMasterBookings().catch(() => []),
+    ]);
+
+    const name = profile?.name || masterRow?.first_name || 'Мастер';
+    const firstName = name.split(' ')[0];
+    const botUsername = masterRow?.bot_username || '';
+
+    el.querySelector('#dash-greeting').textContent = `Привет, ${firstName}!`;
+
     const upcomingBookings = bookings
       .filter(b => b.status === 'pending' || b.status === 'confirmed')
       .sort((a, b) => a.booking_date.localeCompare(b.booking_date) || a.booking_time.localeCompare(b.booking_time))
@@ -20,7 +46,6 @@ export const dashboardScreen = {
     const bookingCards = upcomingBookings.map((b, i) => {
       const isPending = b.status === 'pending';
       const dateLabel = getDateLabel(b.booking_date);
-
       return `
         <div class="card fade-in-up delay-${Math.min(i + 2, 6)}">
           <div class="card-row">
@@ -43,21 +68,15 @@ export const dashboardScreen = {
 
     const activeServicesCount = services.filter(s => s.is_active).length;
     const photoCount = portfolio.length;
+    const schedule = profile?.masters ? null : null; // расписание в отдельном запросе если нужно
+    const workDaysText = 'Пн-Пт'; // упрощённо, точное расписание в экране schedule
 
-    // Рабочие дни — текст
-    const daysMap = { 1: 'Пн', 2: 'Вт', 3: 'Ср', 4: 'Чт', 5: 'Пт', 6: 'Сб', 7: 'Вс' };
-    const workDaysText = master.schedule.work_days.map(d => daysMap[d]).join('-');
-
-    return `
-      <div class="fade-in-up">
-        <div class="page-title">Привет, ${master.name.split(' ')[0]}!</div>
-      </div>
-
+    el.querySelector('#dash-content').innerHTML = `
       <!-- Ссылка на бота -->
       <div class="info-block fade-in-up delay-1">
         <div class="info-block-label">🔗 Ваша ссылка:</div>
-        <div class="info-block-value" id="bot-link">t.me/${master.bot_username}</div>
-        <button class="btn btn-sm btn-secondary mt-sm" id="btn-copy-link">Скопировать</button>
+        <div class="info-block-value" id="bot-link">${botUsername ? `t.me/${botUsername}` : 'Бот не подключён'}</div>
+        ${botUsername ? `<button class="btn btn-sm btn-secondary mt-sm" id="btn-copy-link">Скопировать</button>` : ''}
       </div>
 
       <!-- Ближайшие записи -->
@@ -71,7 +90,7 @@ export const dashboardScreen = {
         </div>
       `}
 
-      <!-- Быстрые действия (сетка 2x2) -->
+      <!-- Быстрые действия -->
       <div class="section-title fade-in-up delay-3">Быстрые действия</div>
       <div class="grid-2x2 fade-in-up delay-3">
         <button class="grid-tile" data-goto="master-services">
@@ -96,36 +115,28 @@ export const dashboardScreen = {
         </button>
       </div>
 
-      <!-- Предпросмотр -->
       <button class="btn btn-secondary btn-full mt fade-in-up delay-4" id="btn-preview">
         👁 Посмотреть как клиент
       </button>
 
-      <!-- Подсказка -->
       ${photoCount === 0 ? `
-        <div class="tip mt fade-in-up delay-5" id="tip-photo">
-          <button class="tip-dismiss" id="dismiss-tip" aria-label="Закрыть подсказку">✕</button>
+        <div class="tip mt fade-in-up delay-5">
           <div class="tip-icon">📷</div>
           <div class="tip-text">Добавьте фото работ — клиенты записываются на 40% чаще с портфолио</div>
         </div>
       ` : ''}
     `;
-  },
-
-  onEnter(el) {
-    hideMainButton();
 
     // Копировать ссылку
     el.querySelector('#btn-copy-link')?.addEventListener('click', () => {
       hapticSuccess();
-      const link = `https://t.me/${master.bot_username}`;
-      navigator.clipboard?.writeText(link).catch(() => {});
+      navigator.clipboard?.writeText(`https://t.me/${botUsername}`).catch(() => {});
       const btn = el.querySelector('#btn-copy-link');
       btn.textContent = '✓ Скопировано!';
       setTimeout(() => { btn.textContent = 'Скопировать'; }, 2000);
     });
 
-    // Навигация по плиткам
+    // Навигация плитки
     el.querySelectorAll('[data-goto]').forEach(tile => {
       tile.addEventListener('click', () => {
         hapticLight();
@@ -139,7 +150,7 @@ export const dashboardScreen = {
       navigateTo('master-bookings');
     });
 
-    // Предпросмотр как клиент
+    // Предпросмотр
     el.querySelector('#btn-preview')?.addEventListener('click', () => {
       hapticLight();
       navigateTo('catalog');
@@ -147,9 +158,10 @@ export const dashboardScreen = {
 
     // Подтвердить запись
     el.querySelectorAll('[data-action="confirm"]').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', async (e) => {
         e.stopPropagation();
         hapticSuccess();
+        await updateBookingStatus(btn.dataset.id, 'confirmed').catch(console.error);
         const card = btn.closest('.card');
         card.querySelector('.card-actions').innerHTML = '<div class="status status-confirmed">✅ Подтверждена</div>';
       });
@@ -162,15 +174,11 @@ export const dashboardScreen = {
         hapticWarning();
         const ok = await tgConfirm('Отклонить запись?');
         if (ok) {
+          await updateBookingStatus(btn.dataset.id, 'cancelled_by_master').catch(console.error);
           btn.closest('.card').style.opacity = '0.4';
           btn.closest('.card').style.pointerEvents = 'none';
         }
       });
-    });
-
-    // Закрыть подсказку
-    el.querySelector('#dismiss-tip')?.addEventListener('click', () => {
-      el.querySelector('#tip-photo').remove();
     });
   },
 };
@@ -180,7 +188,6 @@ function getDateLabel(dateStr) {
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const date = new Date(dateStr + 'T00:00:00');
-
   if (date.toDateString() === today.toDateString()) return 'Сегодня';
   if (date.toDateString() === tomorrow.toDateString()) return 'Завтра';
   return formatDate(dateStr);

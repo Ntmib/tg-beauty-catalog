@@ -1,74 +1,113 @@
 /**
- * Экран М3: Портфолио (фото работ мастера)
+ * Экран М3: Портфолио мастера
  *
- * Сетка 3 в ряд с кнопкой удаления на каждом фото.
- * Кнопка "Добавить фото".
+ * Загрузка фото из Supabase Storage + управление галереей.
  */
 
-import { portfolio } from '../data.js';
 import { hapticLight, hapticWarning, hideMainButton, confirm as tgConfirm } from '../telegram.js';
-
-const MAX_PHOTOS = 20;
+import { getPortfolio, uploadPhoto, deletePhoto, clearCache } from '../api.js';
 
 export const masterPortfolioScreen = {
   render() {
-    const photoItems = portfolio.map((p, i) => `
-      <div class="portfolio-item" data-photo-id="${p.id}">
-        <div class="portfolio-placeholder ${p.placeholder}">${p.emoji}</div>
-        <button class="portfolio-delete" data-delete="${p.id}" aria-label="Удалить фото">✕</button>
-      </div>
-    `).join('');
-
     return `
       <div class="fade-in-up" style="display: flex; justify-content: space-between; align-items: baseline;">
         <div class="page-title" style="margin-bottom: 0;">Фото работ</div>
-        <div class="caption">${portfolio.length} из ${MAX_PHOTOS}</div>
+        <div class="caption" id="photo-count">Загрузка...</div>
       </div>
-
       <div class="portfolio-grid mt fade-in-up delay-1" id="portfolio-grid">
-        ${photoItems}
-        ${portfolio.length < MAX_PHOTOS ? `
-          <button class="add-photo-btn" id="btn-add-photo">
-            <div class="add-photo-btn-icon">+</div>
-            <div>Добавить</div>
-          </button>
-        ` : ''}
+        <div class="caption text-center" style="padding: 40px 0; grid-column: 1/-1;">Загрузка...</div>
       </div>
-
       <div class="tip mt fade-in-up delay-2">
         <div class="tip-text">💡 Совет: фото "до и после" работают лучше всего</div>
       </div>
+      <!-- Скрытый input для выбора файла -->
+      <input type="file" id="photo-file-input" accept="image/*" style="display:none;" multiple>
     `;
   },
 
-  onEnter(el) {
+  async onEnter(el) {
     hideMainButton();
 
-    // Удаление фото
-    el.querySelectorAll('[data-delete]').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        hapticWarning();
-        const ok = await tgConfirm('Удалить фото?');
-        if (ok) {
-          const item = btn.closest('.portfolio-item');
-          item.style.opacity = '0';
-          item.style.transform = 'scale(0.8)';
-          setTimeout(() => item.remove(), 200);
-        }
+    const MAX_PHOTOS = 20;
+    let portfolio = await getPortfolio(true).catch(() => []);
+
+    const renderGrid = () => {
+      const photoCount = portfolio.length;
+      el.querySelector('#photo-count').textContent = `${photoCount} из ${MAX_PHOTOS}`;
+
+      const items = portfolio.map(p => `
+        <div class="portfolio-item" data-photo-id="${p.id}" data-photo-url="${p.image_url}">
+          <img src="${p.image_url}" alt="Работа"
+               style="width:100%;height:100%;object-fit:cover;border-radius:8px;"
+               onerror="this.parentNode.style.background='#f0f0f0'">
+          <button class="portfolio-delete" data-delete="${p.id}" aria-label="Удалить фото">✕</button>
+        </div>
+      `).join('');
+
+      const addBtn = photoCount < MAX_PHOTOS ? `
+        <button class="add-photo-btn" id="btn-add-photo">
+          <div class="add-photo-btn-icon">+</div>
+          <div>Добавить</div>
+        </button>
+      ` : '';
+
+      el.querySelector('#portfolio-grid').innerHTML = items + addBtn;
+      setupGridActions();
+    };
+
+    const setupGridActions = () => {
+      // Удаление
+      el.querySelectorAll('[data-delete]').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          hapticWarning();
+          const ok = await tgConfirm('Удалить фото?');
+          if (ok) {
+            const id = btn.dataset.delete;
+            const item = btn.closest('.portfolio-item');
+            const url = item.dataset.photoUrl;
+            try {
+              await deletePhoto(id, url);
+              portfolio = portfolio.filter(p => p.id !== id);
+              clearCache();
+              renderGrid();
+            } catch (e) {
+              console.error('[master-portfolio] Ошибка удаления:', e);
+            }
+          }
+        });
       });
+
+      // Добавить фото
+      el.querySelector('#btn-add-photo')?.addEventListener('click', () => {
+        hapticLight();
+        el.querySelector('#photo-file-input').click();
+      });
+    };
+
+    // Обработка выбора файла
+    el.querySelector('#photo-file-input')?.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files || []);
+      if (files.length === 0) return;
+
+      const addBtn = el.querySelector('#btn-add-photo');
+      if (addBtn) { addBtn.textContent = 'Загрузка...'; addBtn.disabled = true; }
+
+      for (const file of files) {
+        if (portfolio.length >= MAX_PHOTOS) break;
+        try {
+          const uploaded = await uploadPhoto(file);
+          portfolio.push(uploaded);
+          clearCache();
+        } catch (err) {
+          console.error('[master-portfolio] Ошибка загрузки:', err);
+        }
+      }
+
+      e.target.value = '';
+      renderGrid();
     });
 
-    // Добавить фото (демо — просто анимация)
-    el.querySelector('#btn-add-photo')?.addEventListener('click', () => {
-      hapticLight();
-      // В продакшене — input type=file + upload
-      const grid = el.querySelector('#portfolio-grid');
-      const newItem = document.createElement('div');
-      newItem.className = 'portfolio-item fade-in';
-      const phNum = (portfolio.length % 9) + 1;
-      newItem.innerHTML = `<div class="portfolio-placeholder ph-${phNum}">🆕</div>`;
-      grid.insertBefore(newItem, el.querySelector('#btn-add-photo'));
-    });
+    renderGrid();
   },
 };

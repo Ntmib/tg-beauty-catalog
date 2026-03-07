@@ -10,6 +10,7 @@
   <link rel="preconnect" href="https://telegram.org">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://zbxbeagmqmnijkjhhcgp.supabase.co">
 
   <!-- Google Fonts: Playfair Display + Inter -->
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -19,17 +20,52 @@
 
   <!-- Стили -->
   <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    #loading-overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--tg-theme-bg-color, #FEFCF9);
+      z-index: 9999;
+      transition: opacity 0.3s;
+      gap: 16px;
+    }
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(212, 136, 136, 0.2);
+      border-top-color: #D48888;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    .loading-text {
+      font-family: Inter, sans-serif;
+      font-size: 14px;
+      color: var(--tg-theme-hint-color, #999);
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
 </head>
 <body>
+  <!-- Оверлей загрузки (скрывается после аутентификации) -->
+  <div id="loading-overlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Загрузка...</div>
+  </div>
+
   <!-- Контейнер приложения -->
   <div id="app">
-    <!-- Переключатель режима (только для демо, в проде определяется через initData) -->
-    <div id="mode-switcher">
+    <!-- Переключатель режима (только для debug в браузере, скрыт по умолчанию) -->
+    <div id="mode-switcher" style="display: none;">
       <button id="mode-client" class="mode-btn active">Клиент</button>
       <button id="mode-master" class="mode-btn">Мастер</button>
     </div>
 
-    <!-- Контейнер экранов — сюда рендерятся все экраны -->
+    <!-- Контейнер экранов -->
     <div id="screen-container"></div>
   </div>
 
