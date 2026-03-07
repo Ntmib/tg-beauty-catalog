@@ -374,7 +374,11 @@ function setupStep3(el) {
       navigateToRoot('dashboard');
     } catch (e) {
       console.error('[onboarding] Ошибка завершения:', e);
-      el.querySelector('#finish-error').textContent = e.message || 'Ошибка. Попробуйте ещё раз.';
+      const isJwtError = e.message?.includes('JWT') || e.message?.includes('parts');
+      const errText = isJwtError
+        ? 'Сессия устарела. Закройте Mini App и откройте снова.'
+        : e.message || 'Ошибка. Попробуйте ещё раз.';
+      el.querySelector('#finish-error').textContent = errText;
       el.querySelector('#finish-error').style.display = 'block';
       btn.disabled = false;
       btn.textContent = 'Готово! Создать каталог';
