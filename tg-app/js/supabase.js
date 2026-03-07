@@ -5,7 +5,9 @@
  * Bearer-токен от Edge Function auth-telegram в каждый запрос.
  */
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0';
+// Supabase SDK загружается через <script> тег в index.html (UMD)
+// window.supabase доступен глобально до загрузки этого модуля
+const { createClient } = window.supabase;
 
 const SUPABASE_URL = 'https://zbxbeagmqmnijkjhhcgp.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpieGJlYWdtcW1uaWpramhoY2dwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2NDUzNzYsImV4cCI6MjA4ODIyMTM3Nn0.WRpMHqQcH7zbcS7EsdAGiqXFM1uvD42Z7daS5wN1PGo';
