@@ -22,14 +22,14 @@ import { verifyInitData, parseUserFromInitData } from "../_shared/telegram.ts";
 import { decryptToken } from "../_shared/crypto.ts";
 
 // ── Нативное создание JWT через WebCrypto (без djwt) ────────────────────────
-function b64url(str: string): string {
-  return btoa(unescape(encodeURIComponent(str)))
-    .replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
-}
 function b64urlBytes(bytes: Uint8Array): string {
-  let s = "";
-  for (const b of bytes) s += String.fromCharCode(b);
-  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+  let binary = "";
+  for (const b of bytes) binary += String.fromCharCode(b);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+}
+function b64url(str: string): string {
+  // Используем TextEncoder вместо unescape (совместимо с Deno)
+  return b64urlBytes(new TextEncoder().encode(str));
 }
 async function signJWT(payload: Record<string, unknown>, secret: string): Promise<string> {
   const header = b64url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
@@ -40,7 +40,10 @@ async function signJWT(payload: Record<string, unknown>, secret: string): Promis
     { name: "HMAC", hash: "SHA-256" }, false, ["sign"],
   );
   const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(data));
-  return `${data}.${b64urlBytes(new Uint8Array(sig))}`;
+  const token = `${data}.${b64urlBytes(new Uint8Array(sig))}`;
+  // Временный лог для диагностики
+  console.log("[auth] JWT parts:", token.split(".").length, "| token[:40]:", token.substring(0, 40));
+  return token;
 }
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
