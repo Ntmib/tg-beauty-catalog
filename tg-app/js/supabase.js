@@ -24,12 +24,24 @@ export function getAuthToken() {
   return _authToken;
 }
 
-/** Кастомный fetch: добавляет Authorization header к каждому запросу */
+/** Кастомный fetch: добавляет apikey и Authorization header к каждому запросу */
 function authFetch(url, options = {}) {
-  const headers = { ...(options.headers || {}) };
+  // Headers может быть Headers-объектом или plain object — обрабатываем оба случая
+  const srcHeaders = options.headers;
+  let headers;
+  if (srcHeaders instanceof Headers) {
+    headers = Object.fromEntries(srcHeaders.entries());
+  } else {
+    headers = { ...(srcHeaders || {}) };
+  }
+
+  // Всегда добавляем apikey явно (Supabase требует)
+  headers['apikey'] = SUPABASE_ANON_KEY;
+
   if (_authToken) {
     headers['Authorization'] = `Bearer ${_authToken}`;
   }
+
   return fetch(url, { ...options, headers });
 }
 
