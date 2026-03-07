@@ -33,6 +33,7 @@ import { welcomeScreen, shouldShowWelcome } from './screens/welcome.js';
 
 /** Запуск приложения */
 async function init() {
+  window._appStarted = true;
   // 1. Telegram SDK
   initTelegram();
 
