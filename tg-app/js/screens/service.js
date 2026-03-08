@@ -38,7 +38,8 @@ export const serviceScreen = {
     }
 
     const profile = await getMasterProfile().catch(() => null);
-    const masterName = profile?.name || 'Мастер';
+    const masterData = profile?.masters || {};
+    const masterName = profile?.name || `${masterData.first_name || ''} ${masterData.last_name || ''}`.trim() || 'Мастер';
     const specialtyLabels = getSpecialtyLabels(profile?.specialty || []);
     const experience = profile?.experience || '';
     const initials = masterName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);

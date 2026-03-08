@@ -127,14 +127,13 @@ Deno.serve(async (req) => {
       .eq("telegram_id", telegramId)
       .single();
 
-    if (masterRecord) {
-      // Это мастер
+    if (masterRecord && (!masterFromDb || masterRecord.id === masterFromDb.id)) {
+      // Мастер открыл свой собственный бот (или платформенного бота)
       role = "master";
       masterId = masterRecord.id as string;
     } else {
-      // Это клиент
+      // Клиент (или мастер зашёл в чужой бот как клиент)
       role = "client";
-      // masterId — это мастер чей бот открыт
       if (masterFromDb) {
         masterId = masterFromDb.id as string;
       }
