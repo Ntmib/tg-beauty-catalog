@@ -1,18 +1,20 @@
 /**
- * Экран М0: Онбординг мастера (4 шага)
+ * Экран М0: Онбординг мастера
  *
- * Шаг 0: Подключение бота (NEW — вызывает bots-connect Edge Function)
- * Шаг 1: Профиль (имя, специализация)
- * Шаг 2: Услуги из шаблона
- * Шаг 3: Расписание
- * Завершение: completeOnboarding() → dashboard
+ * Шаг 0: Питч — зачем это нужно (простым языком)
+ * Шаг 1: Профиль (имя + специализация)
+ * Шаг 2: Выбор услуг из шаблона
+ * Финал: Превью каталога + необязательное подключение своего бота
+ *
+ * Расписание сохраняется автоматически по умолчанию (Пн-Пт, 10:00–19:00).
+ * Бот можно подключить потом — это не блокирует выход на дашборд.
  */
 
 import { specialties, serviceTemplates, formatPrice, formatDuration } from '../data.js';
 import { navigateToRoot } from '../router.js';
-import { showMainButton, hapticSelection, hapticSuccess } from '../telegram.js';
-import { saveMasterProfile, saveService, saveSchedule, completeOnboarding } from '../api.js';
-import { callEdgeFunction, getMasterId } from '../auth.js';
+import { showMainButton, hideMainButton, hapticSelection, hapticSuccess } from '../telegram.js';
+import { saveMasterProfile, saveService, saveSchedule, completeOnboarding, getMasterRow } from '../api.js';
+import { callEdgeFunction } from '../auth.js';
 
 let currentStep = 0;
 let selectedSpecialties = [];
@@ -34,137 +36,142 @@ export const onboardingScreen = {
 };
 
 // ============================================================
-// Шаг 0: Подключение бота
+// Шаг 0: Питч
 // ============================================================
 
 function renderStep0() {
   return `
-    <div class="text-center fade-in-up">
-      <div style="font-size: 48px; margin-bottom: 8px;">🤖</div>
-      <div class="page-title">Подключите своего бота</div>
-      <div class="caption">Бот нужен для получения записей от клиентов</div>
+    <div class="text-center fade-in-up" style="padding: 8px 0 16px;">
+      <div style="font-size: 56px; margin-bottom: 12px;">💅</div>
+      <div class="page-title" style="font-size: 22px; line-height: 1.3;">
+        Устала отвечать на одни и те же вопросы?
+      </div>
+      <div class="caption" style="margin-top: 8px; font-size: 15px; line-height: 1.5;">
+        Клиенты будут записываться сами — пока ты работаешь.
+        Настройка займёт 3 минуты.
+      </div>
     </div>
 
-    <div class="card fade-in-up delay-1" style="margin-top: var(--space-5);">
-      <div class="card-title">Инструкция:</div>
-      <ol style="margin: 12px 0 0; padding-left: 20px; line-height: 1.8; font-size: 14px; color: var(--tg-theme-text-color);">
-        <li>Откройте <a href="https://t.me/BotFather" target="_blank" style="color:var(--color-primary)">@BotFather</a> в Telegram</li>
-        <li>Отправьте команду <code>/newbot</code></li>
-        <li>Введите имя и username бота</li>
-        <li>Скопируйте токен и вставьте ниже</li>
-      </ol>
+    <div class="card fade-in-up delay-1" style="margin-top: var(--space-4);">
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+
+        <div style="display: flex; align-items: flex-start; gap: 12px;">
+          <div style="font-size: 24px; flex-shrink: 0;">😤</div>
+          <div>
+            <div style="font-weight: 600; font-size: 14px;">Переписки отнимают время</div>
+            <div class="caption" style="margin-top: 2px;">
+              Мастера тратят 1–2 часа в день, чтобы ответить на «когда есть свободное время?».
+              Теперь клиент сам выбирает время и записывается.
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: flex-start; gap: 12px;">
+          <div style="font-size: 24px; flex-shrink: 0;">👻</div>
+          <div>
+            <div style="font-weight: 600; font-size: 14px;">Клиенты записываются и не приходят</div>
+            <div class="caption" style="margin-top: 2px;">
+              Приложение само напоминает клиенту о записи за день.
+              Мастера говорят — клиенты стали приходить намного чаще.
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: flex-start; gap: 12px;">
+          <div style="font-size: 24px; flex-shrink: 0;">📲</div>
+          <div>
+            <div style="font-weight: 600; font-size: 14px;">Всё прямо в Telegram</div>
+            <div class="caption" style="margin-top: 2px;">
+              Не нужно скачивать отдельные приложения.
+              Клиент записывается там, где уже сидит — в Telegram.
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
 
-    <div class="input-group fade-in-up delay-2" style="margin-top: var(--space-5);">
-      <label class="input-label" for="bot-token">Токен бота</label>
-      <input type="text" class="input" id="bot-token" autocomplete="off"
-             placeholder="1234567890:AAF...">
-    </div>
-
-    <div id="bot-connect-error" class="caption" style="color:red;display:none;margin-bottom:8px;"></div>
-
-    <button class="btn btn-primary btn-full fade-in-up delay-3" id="btn-connect-bot">
-      Подключить бота
+    <button class="btn btn-primary btn-full fade-in-up delay-2" id="btn-pitch-next"
+            style="margin-top: var(--space-5);">
+      Хочу попробовать →
     </button>
 
-    <div class="progress-dots fade-in-up delay-4" style="margin-top: var(--space-5);">
-      <div class="progress-dot active"></div>
-      <div class="progress-dot"></div>
-      <div class="progress-dot"></div>
-      <div class="progress-dot"></div>
+    <div class="caption text-center fade-in-up delay-3" style="margin-top: 10px; opacity: 0.6;">
+      Бесплатно · Без комиссий · 3 минуты
     </div>
   `;
 }
 
 function setupStep0(el) {
-  const connectBot = async () => {
-    const token = el.querySelector('#bot-token').value.trim();
-    const errEl = el.querySelector('#bot-connect-error');
-    errEl.style.display = 'none';
-
-    if (!token || !token.includes(':')) {
-      errEl.textContent = 'Введите корректный токен (формат: 123456:ABC...)';
-      errEl.style.display = 'block';
-      return;
-    }
-
-    const btn = el.querySelector('#btn-connect-bot');
-    btn.disabled = true;
-    btn.textContent = 'Подключаем бота...';
-
-    try {
-      const result = await callEdgeFunction('bots-connect', { bot_token: token });
-      onboardingData.botUsername = result.bot_username;
-      goToStep1(el);
-    } catch (e) {
-      console.error('[onboarding] Ошибка подключения бота:', e);
-      errEl.textContent = e.message || 'Не удалось подключить бота. Проверьте токен.';
-      errEl.style.display = 'block';
-      btn.disabled = false;
-      btn.textContent = 'Подключить бота';
-    }
-  };
-
-  showMainButton('Подключить', connectBot);
-  el.querySelector('#btn-connect-bot')?.addEventListener('click', connectBot);
+  hideMainButton();
+  el.querySelector('#btn-pitch-next')?.addEventListener('click', () => {
+    hapticSelection();
+    goToStep1(el);
+  });
 }
 
 // ============================================================
 // Шаг 1: Профиль
 // ============================================================
 
-function renderStep1(el) {
+function renderStep1() {
+  const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+  const defaultName = [tgUser?.first_name, tgUser?.last_name].filter(Boolean).join(' ') || '';
+
   const specChips = specialties.map(s => `
     <button class="chip" data-spec="${s.id}">${s.emoji} ${s.label}</button>
   `).join('');
 
-  el.innerHTML = `
-    <div class="text-center fade-in-up">
-      <div class="page-title">Ваш профиль</div>
+  return `
+    <div class="fade-in-up">
+      <div class="page-title">Расскажи о себе</div>
+      <div class="caption" style="margin-top: 4px;">Клиенты увидят это на твоей страничке</div>
     </div>
 
-    <div class="input-group fade-in-up delay-1">
-      <label class="input-label" for="onboard-name">Имя</label>
-      <input type="text" class="input" id="onboard-name" name="name" autocomplete="name"
-             value="${onboardingData.name || ''}" placeholder="Ваше имя">
+    <div class="input-group fade-in-up delay-1" style="margin-top: var(--space-4);">
+      <label class="input-label" for="onboard-name">Как тебя зовут?</label>
+      <input type="text" class="input" id="onboard-name" autocomplete="name"
+             value="${defaultName}" placeholder="Например: Анна">
+      <div id="name-error" class="caption" style="color: red; display: none; margin-top: 4px;">
+        Напиши своё имя — клиенты должны знать, к кому записываются
+      </div>
     </div>
 
     <div class="input-group fade-in-up delay-2">
-      <label class="input-label">Специализация (выберите одну или несколько)</label>
-      <div class="chips" id="spec-chips">${specChips}</div>
+      <label class="input-label">
+        Чем занимаешься?
+        <span style="opacity: 0.5; font-weight: 400;">(выбери одно или несколько)</span>
+      </label>
+      <div class="chips" id="spec-chips">
+        ${specChips}
+        <button class="chip" id="chip-other" data-spec="other">✏️ Другое</button>
+      </div>
+      <div id="other-spec-wrap" style="display: none; margin-top: 10px;">
+        <input type="text" class="input" id="other-spec-input" autocomplete="off"
+               placeholder="Например: перманентный макияж, депиляция...">
+        <div class="caption" style="margin-top: 6px; opacity: 0.6;">
+          Напиши свою специализацию — именно так увидят клиенты
+        </div>
+      </div>
     </div>
 
-    <div class="input-group fade-in-up delay-3">
-      <label class="input-label" for="onboard-experience">Опыт работы</label>
-      <input type="text" class="input" id="onboard-experience" autocomplete="off"
-             value="${onboardingData.experience || ''}" placeholder="5 лет">
+    <div class="caption text-center fade-in-up delay-3" style="margin-top: 16px; opacity: 0.5;">
+      Шаг 1 из 3
     </div>
 
-    <div class="input-group fade-in-up delay-4">
-      <label class="input-label" for="onboard-city">Город / Адрес</label>
-      <input type="text" class="input" id="onboard-city" autocomplete="street-address"
-             value="${onboardingData.city || ''}" placeholder="Москва">
-    </div>
-
-    <div class="progress-dots fade-in-up delay-5">
-      <div class="progress-dot"></div>
-      <div class="progress-dot active"></div>
-      <div class="progress-dot"></div>
-      <div class="progress-dot"></div>
-    </div>
-
-    <button class="btn btn-primary mt" id="btn-step1-next">Далее</button>
+    <button class="btn btn-primary btn-full mt fade-in-up delay-3" id="btn-step1-next">Далее</button>
   `;
 }
 
 function goToStep1(el) {
   currentStep = 1;
-  renderStep1(el);
+  el.innerHTML = renderStep1();
   setupStep1(el);
 }
 
 function setupStep1(el) {
-  el.querySelectorAll('#spec-chips .chip').forEach(chip => {
+  // Обычные чипы специализаций
+  el.querySelectorAll('#spec-chips .chip:not(#chip-other)').forEach(chip => {
     chip.addEventListener('click', () => {
       hapticSelection();
       chip.classList.toggle('active');
@@ -177,32 +184,72 @@ function setupStep1(el) {
     });
   });
 
-  const goToStep2 = () => {
+  // Чип «Другое» — показывает поле ввода
+  const chipOther = el.querySelector('#chip-other');
+  const otherWrap = el.querySelector('#other-spec-wrap');
+  chipOther?.addEventListener('click', () => {
+    hapticSelection();
+    const isActive = chipOther.classList.toggle('active');
+    otherWrap.style.display = isActive ? 'block' : 'none';
+    if (isActive) {
+      el.querySelector('#other-spec-input')?.focus();
+    } else {
+      // Убираем кастомную специализацию если скрыли поле
+      selectedSpecialties = selectedSpecialties.filter(s => !s.startsWith('custom:'));
+    }
+  });
+
+  hideMainButton();
+
+  const next = () => {
+    const nameInput = el.querySelector('#onboard-name');
+    const name = nameInput.value.trim();
+
+    if (!name) {
+      el.querySelector('#name-error').style.display = 'block';
+      nameInput.style.borderColor = 'red';
+      nameInput.focus();
+      return;
+    }
+
+    el.querySelector('#name-error').style.display = 'none';
+    nameInput.style.borderColor = '';
+
+    // Если выбрано «Другое» — добавляем кастомную специализацию из поля ввода
+    const chipOther = el.querySelector('#chip-other');
+    if (chipOther?.classList.contains('active')) {
+      const customVal = el.querySelector('#other-spec-input')?.value.trim();
+      if (customVal) {
+        if (!selectedSpecialties.includes(`custom:${customVal}`)) {
+          selectedSpecialties.push(`custom:${customVal}`);
+        }
+      }
+    }
+
     if (selectedSpecialties.length === 0) selectedSpecialties = ['nails'];
-    onboardingData.name = el.querySelector('#onboard-name').value.trim();
-    onboardingData.experience = el.querySelector('#onboard-experience').value.trim();
-    onboardingData.city = el.querySelector('#onboard-city').value.trim();
+
+    onboardingData.name = name;
     onboardingData.specialty = [...selectedSpecialties];
-    currentStep = 2;
-    renderStep2(el);
-    setupStep2(el);
+    goToStep2(el);
   };
 
-  showMainButton('Далее', goToStep2);
-  el.querySelector('#btn-step1-next')?.addEventListener('click', goToStep2);
+  el.querySelector('#btn-step1-next')?.addEventListener('click', next);
 }
 
 // ============================================================
-// Шаг 2: Услуги из шаблона
+// Шаг 2: Выбор услуг
 // ============================================================
 
-function renderStep2(el) {
+function renderStep2() {
   let templates = [];
   selectedSpecialties.forEach(spec => {
-    if (serviceTemplates[spec]) templates = templates.concat(serviceTemplates[spec]);
+    // Пропускаем кастомные специализации (custom:...) — для них нет шаблонов
+    if (!spec.startsWith('custom:') && serviceTemplates[spec]) {
+      templates = templates.concat(serviceTemplates[spec]);
+    }
   });
 
-  const templateCards = templates.map((t, i) => `
+  const cards = templates.map((t, i) => `
     <button class="service-template" data-index="${i}">
       <div class="service-template-check">✓</div>
       <div class="service-template-body">
@@ -212,29 +259,50 @@ function renderStep2(el) {
     </button>
   `).join('');
 
-  el.innerHTML = `
+  return `
     <div class="fade-in-up">
-      <div class="page-title">Добавьте первую услугу</div>
-      <div class="caption">Выберите из шаблона (остальные добавите позже):</div>
+      <div class="page-title">Какие услуги ты делаешь?</div>
+      <div class="caption" style="margin-top: 4px;">
+        Выбери одну или несколько. Остальные добавишь потом — это займёт минуту.
+      </div>
     </div>
-    <div id="templates-list" class="mt fade-in-up delay-1">${templateCards}</div>
-    <div class="progress-dots fade-in-up delay-2" style="margin-top: 16px;">
-      <div class="progress-dot"></div>
-      <div class="progress-dot"></div>
-      <div class="progress-dot active"></div>
-      <div class="progress-dot"></div>
+
+    <div id="templates-list" class="mt fade-in-up delay-1">${cards}</div>
+
+    <div class="caption text-center fade-in-up delay-2" style="margin-top: 16px; opacity: 0.5;">
+      Шаг 2 из 3
     </div>
-    <button class="btn btn-primary mt" id="btn-step2-next">Далее</button>
+
+    <button class="btn btn-primary btn-full mt fade-in-up delay-2" id="btn-step2-next">
+      Готово — создать каталог
+    </button>
   `;
+}
+
+function goToStep2(el) {
+  currentStep = 2;
+  el.innerHTML = renderStep2();
+  setupStep2(el);
 }
 
 function setupStep2(el) {
   let templates = [];
   selectedSpecialties.forEach(spec => {
-    if (serviceTemplates[spec]) templates = templates.concat(serviceTemplates[spec]);
+    // Пропускаем кастомные специализации (custom:...) — для них нет шаблонов
+    if (!spec.startsWith('custom:') && serviceTemplates[spec]) {
+      templates = templates.concat(serviceTemplates[spec]);
+    }
   });
 
   selectedServices = [];
+
+  const updateBtn = () => {
+    const btn = el.querySelector('#btn-step2-next');
+    const count = selectedServices.length;
+    btn.textContent = count > 0
+      ? `Готово — создать каталог (выбрано: ${count})`
+      : 'Готово — создать каталог';
+  };
 
   el.querySelectorAll('.service-template').forEach(item => {
     item.addEventListener('click', () => {
@@ -246,143 +314,211 @@ function setupStep2(el) {
       } else {
         selectedServices = selectedServices.filter(s => s.title !== templates[idx].title);
       }
-      const count = selectedServices.length;
-      showMainButton(count > 0 ? `Далее (выбрано: ${count})` : 'Далее', goToStep3);
+      updateBtn();
     });
   });
 
-  const goToStep3 = () => {
-    currentStep = 3;
-    renderStep3(el);
-    setupStep3(el);
-  };
+  hideMainButton();
 
-  showMainButton('Далее', goToStep3);
-  el.querySelector('#btn-step2-next')?.addEventListener('click', goToStep3);
+  el.querySelector('#btn-step2-next')?.addEventListener('click', () => goToFinish(el));
 }
 
 // ============================================================
-// Шаг 3: Расписание
+// Финал: Сохранение + Превью + Подключение бота
 // ============================================================
 
-function renderStep3(el) {
-  const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-  const dayToggles = days.map((d, i) => `
-    <button class="day-toggle ${i < 5 ? 'active' : ''}" data-day="${i + 1}">${d}</button>
-  `).join('');
+async function goToFinish(el) {
+  currentStep = 3;
+  el.innerHTML = renderSaving();
 
-  const hourOptions = (vals, selected) => vals
-    .map(h => `<option value="${h}" ${h === selected ? 'selected' : ''}>${String(h).padStart(2, '0')}:00</option>`)
-    .join('');
-  const hours = Array.from({ length: 15 }, (_, i) => i + 7);
+  try {
+    // Сохранить профиль
+    await saveMasterProfile({
+      name: onboardingData.name,
+      specialty: onboardingData.specialty || [],
+      experience: null,
+      city: null,
+    });
 
-  el.innerHTML = `
-    <div class="fade-in-up">
-      <div class="page-title">Когда вы работаете?</div>
+    // Сохранить выбранные услуги
+    for (const svc of selectedServices) {
+      await saveService({ title: svc.title, price: svc.price, duration: svc.duration });
+    }
+
+    // Расписание по умолчанию — Пн-Пт, 10:00–19:00 (можно изменить в настройках)
+    await saveSchedule({
+      work_days: [1, 2, 3, 4, 5],
+      start_hour: 10,
+      end_hour: 19,
+      break_start: 13,
+      break_end: 14,
+    });
+
+    // Завершить онбординг
+    await completeOnboarding();
+
+    hapticSuccess();
+    el.innerHTML = renderPreview();
+    setupPreview(el);
+
+  } catch (e) {
+    console.error('[onboarding] Ошибка при сохранении:', e);
+    el.innerHTML = renderSavingError(e.message);
+    el.querySelector('#btn-retry')?.addEventListener('click', () => goToFinish(el));
+  }
+}
+
+function renderSaving() {
+  return `
+    <div class="text-center fade-in-up" style="padding: 80px 0;">
+      <div style="font-size: 48px; margin-bottom: 16px;">⏳</div>
+      <div class="page-title">Создаём твой каталог...</div>
+      <div class="caption" style="margin-top: 8px;">Секунду!</div>
     </div>
-
-    <div class="section-title fade-in-up delay-1">Рабочие дни</div>
-    <div class="day-toggles fade-in-up delay-1" id="day-toggles">${dayToggles}</div>
-
-    <div class="section-title fade-in-up delay-2">Часы работы</div>
-    <div class="flex-between gap-3 fade-in-up delay-2">
-      <div class="flex-1">
-        <label class="input-label" for="start-hour">Начало</label>
-        <select class="input" id="start-hour">${hourOptions(hours, 10)}</select>
-      </div>
-      <div class="flex-1">
-        <label class="input-label" for="end-hour">Конец</label>
-        <select class="input" id="end-hour">${hourOptions(hours, 19)}</select>
-      </div>
-    </div>
-
-    <div class="section-title fade-in-up delay-3">Перерыв (необязательно)</div>
-    <div class="flex-between gap-3 fade-in-up delay-3">
-      <div class="flex-1">
-        <label class="input-label" for="break-start">С</label>
-        <select class="input" id="break-start">${hourOptions(hours, 13)}</select>
-      </div>
-      <div class="flex-1">
-        <label class="input-label" for="break-end">До</label>
-        <select class="input" id="break-end">${hourOptions(hours, 14)}</select>
-      </div>
-    </div>
-
-    <div class="progress-dots fade-in-up delay-4 mt">
-      <div class="progress-dot"></div>
-      <div class="progress-dot"></div>
-      <div class="progress-dot"></div>
-      <div class="progress-dot active"></div>
-    </div>
-
-    <div id="finish-error" class="caption" style="color:red;display:none;margin-top:8px;"></div>
-    <button class="btn btn-primary mt" id="btn-finish">Готово! Создать каталог</button>
   `;
 }
 
-function setupStep3(el) {
-  el.querySelectorAll('.day-toggle').forEach(toggle => {
-    toggle.addEventListener('click', () => {
-      hapticSelection();
-      toggle.classList.toggle('active');
-    });
+function renderSavingError(msg) {
+  return `
+    <div class="text-center fade-in-up" style="padding: 40px 0;">
+      <div style="font-size: 48px; margin-bottom: 16px;">😕</div>
+      <div class="page-title">Что-то пошло не так</div>
+      <div class="caption" style="margin-top: 8px; color: red;">${msg || 'Попробуй ещё раз'}</div>
+      <button class="btn btn-primary btn-full mt" id="btn-retry">Попробовать снова</button>
+    </div>
+  `;
+}
+
+function renderPreview() {
+  const specLabels = (onboardingData.specialty || []).map(id => {
+    if (id.startsWith('custom:')) return `✏️ ${id.replace('custom:', '')}`;
+    const s = specialties.find(x => x.id === id);
+    return s ? `${s.emoji} ${s.label}` : '';
+  }).filter(Boolean).join(', ') || '';
+
+  const count = selectedServices.length;
+  const serviceText = count > 0
+    ? `${count} ${count === 1 ? 'услуга' : count < 5 ? 'услуги' : 'услуг'}`
+    : 'услуги добавлены';
+
+  return `
+    <div class="text-center fade-in-up">
+      <div style="font-size: 48px; margin-bottom: 8px;">🎉</div>
+      <div class="page-title">Каталог готов!</div>
+      <div class="caption" style="margin-top: 4px;">Вот как тебя видят клиенты:</div>
+    </div>
+
+    <!-- Превью карточки мастера -->
+    <div class="card fade-in-up delay-1" style="margin-top: var(--space-4); border: 2px solid var(--color-primary);">
+      <div class="card-row">
+        <div style="
+          width: 48px; height: 48px; border-radius: 50%;
+          background: linear-gradient(135deg, var(--color-primary), var(--color-accent, #c45e72));
+          display: flex; align-items: center; justify-content: center;
+          font-size: 22px; flex-shrink: 0;
+        ">💅</div>
+        <div class="card-body">
+          <div class="card-title">${onboardingData.name || 'Мастер'}</div>
+          <div class="card-subtitle">${specLabels}</div>
+        </div>
+      </div>
+      <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--tg-theme-hint-color, #e0e0e0);">
+        <div class="caption">📋 ${serviceText} · ⏰ Пн–Пт, 10:00–19:00</div>
+      </div>
+    </div>
+
+    <!-- Что даёт бот -->
+    <div class="card fade-in-up delay-2" style="margin-top: var(--space-3);">
+      <div style="font-weight: 600; font-size: 14px; margin-bottom: 8px;">После подключения бота ты сможешь:</div>
+      <div style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 1.4;">
+        <div>🔔 Клиенты получают напоминание о записи — сами</div>
+        <div>📣 Делать рассылку акций всем клиентам сразу</div>
+        <div>🔗 Давать клиентам личную ссылку для записи</div>
+      </div>
+    </div>
+
+    <!-- Блок подключения бота -->
+    <div class="card fade-in-up delay-3" style="margin-top: var(--space-3);">
+      <div style="font-size: 28px; text-align: center; margin-bottom: 8px;">🤖</div>
+      <div style="font-weight: 600; font-size: 15px; text-align: center; margin-bottom: 6px;">
+        Подключи своего бота
+      </div>
+      <div class="caption text-center" style="margin-bottom: 14px; line-height: 1.5;">
+        Создать бота бесплатно через @BotFather — это займёт 2 минуты.
+      </div>
+
+      <div class="input-group" style="margin-bottom: 8px;">
+        <label class="input-label" for="bot-token">Токен бота <span style="opacity:0.5; font-weight:400;">(как получить — инструкция ниже)</span></label>
+        <input type="text" class="input" id="bot-token" autocomplete="off"
+               placeholder="1234567890:AAF...">
+      </div>
+
+      <div id="bot-connect-error" class="caption" style="color: red; display: none; margin-bottom: 8px;"></div>
+
+      <button class="btn btn-primary btn-full" id="btn-connect-bot">Подключить бота</button>
+
+      <details style="margin-top: 14px;">
+        <summary class="caption" style="cursor: pointer; color: var(--color-primary); user-select: none;">
+          Как создать бота? (открыть инструкцию)
+        </summary>
+        <ol style="margin: 10px 0 0; padding-left: 20px; line-height: 2; font-size: 13px; color: var(--tg-theme-text-color);">
+          <li>Открой <a href="https://t.me/BotFather" target="_blank" style="color: var(--color-primary);">@BotFather</a> в Telegram</li>
+          <li>Нажми «Старт» или отправь <code>/newbot</code></li>
+          <li>BotFather спросит имя бота — напиши любое (например: «Маникюр Анны»)</li>
+          <li>Потом спросит username — он должен заканчиваться на <code>_bot</code> (например: <code>anna_nail_bot</code>)</li>
+          <li>BotFather пришлёт токен — скопируй его и вставь в поле выше</li>
+        </ol>
+      </details>
+    </div>
+
+    <button class="btn btn-outline btn-full fade-in-up delay-3" id="btn-skip-bot"
+            style="margin-top: var(--space-3);">
+      Подключу позже — перейти в кабинет
+    </button>
+
+    <div class="caption text-center fade-in-up delay-4" style="margin-top: 10px; opacity: 0.6;">
+      Бота можно подключить в любой момент в настройках
+    </div>
+  `;
+}
+
+function setupPreview(el) {
+  hideMainButton();
+
+  // Пропустить подключение бота
+  el.querySelector('#btn-skip-bot')?.addEventListener('click', () => {
+    hapticSelection();
+    navigateToRoot('dashboard');
   });
 
-  const finish = async () => {
-    const work_days = Array.from(el.querySelectorAll('.day-toggle.active'))
-      .map(t => parseInt(t.dataset.day));
-    if (work_days.length === 0) {
-      el.querySelector('#finish-error').textContent = 'Выберите хотя бы один рабочий день';
-      el.querySelector('#finish-error').style.display = 'block';
+  // Подключить бота
+  const connectBot = async () => {
+    const token = el.querySelector('#bot-token').value.trim();
+    const errEl = el.querySelector('#bot-connect-error');
+    errEl.style.display = 'none';
+
+    if (!token || !token.includes(':')) {
+      errEl.textContent = 'Вставь токен в поле выше. Он выглядит примерно так: 1234567890:AAF...';
+      errEl.style.display = 'block';
       return;
     }
 
-    const btn = el.querySelector('#btn-finish');
+    const btn = el.querySelector('#btn-connect-bot');
     btn.disabled = true;
-    btn.textContent = 'Создаём каталог...';
-    el.querySelector('#finish-error').style.display = 'none';
+    btn.textContent = 'Подключаем...';
 
     try {
-      // Сохранить профиль
-      if (onboardingData.name) {
-        await saveMasterProfile({
-          name: onboardingData.name,
-          specialty: onboardingData.specialty || [],
-          experience: onboardingData.experience || null,
-          city: onboardingData.city || null,
-        });
-      }
-
-      // Сохранить выбранные услуги
-      for (const svc of selectedServices) {
-        await saveService({ title: svc.title, price: svc.price, duration: svc.duration });
-      }
-
-      // Сохранить расписание
-      await saveSchedule({
-        work_days,
-        start_hour: parseInt(el.querySelector('#start-hour').value),
-        end_hour: parseInt(el.querySelector('#end-hour').value),
-        break_start: parseInt(el.querySelector('#break-start').value),
-        break_end: parseInt(el.querySelector('#break-end').value),
-      });
-
-      // Завершить онбординг
-      await completeOnboarding();
-
+      await callEdgeFunction('bots-connect', { bot_token: token });
       hapticSuccess();
       navigateToRoot('dashboard');
     } catch (e) {
-      console.error('[onboarding] Ошибка завершения:', e);
-      // Показываем полный текст ошибки для диагностики
-      const errText = (e.message || JSON.stringify(e) || 'Неизвестная ошибка') + ' | code:' + (e.code || '-');
-      el.querySelector('#finish-error').textContent = errText;
-      el.querySelector('#finish-error').style.display = 'block';
+      console.error('[onboarding] Ошибка подключения бота:', e);
+      errEl.textContent = e.message || 'Не получилось подключить. Проверь токен и попробуй снова.';
+      errEl.style.display = 'block';
       btn.disabled = false;
-      btn.textContent = 'Готово! Создать каталог';
+      btn.textContent = 'Подключить бота';
     }
   };
 
-  showMainButton('Создать каталог', finish);
-  el.querySelector('#btn-finish')?.addEventListener('click', finish);
+  el.querySelector('#btn-connect-bot')?.addEventListener('click', connectBot);
 }

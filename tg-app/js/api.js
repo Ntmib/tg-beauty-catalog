@@ -441,6 +441,46 @@ export async function notifyMasterAboutBooking(bookingId) {
 }
 
 // ============================================================
+// КЛИЕНТЫ (мастер)
+// ============================================================
+
+/**
+ * Получить количество уникальных клиентов мастера.
+ */
+export async function getClientsCount() {
+  const masterId = getMasterId();
+  const { count, error } = await supabase
+    .from('clients')
+    .select('*', { count: 'exact', head: true })
+    .eq('master_id', masterId);
+  if (error) throw error;
+  return count || 0;
+}
+
+/**
+ * Отправить рассылку всем клиентам через Edge Function broadcast.
+ * Возвращает { sent, failed, total }.
+ */
+export async function broadcastToClients(message) {
+  const { SUPABASE_BASE_URL } = await import('./supabase.js');
+  const { getSession } = await import('./auth.js');
+  const session = getSession();
+
+  const res = await fetch(`${SUPABASE_BASE_URL}/functions/v1/broadcast`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
+    },
+    body: JSON.stringify({ message }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Ошибка рассылки');
+  return data;
+}
+
+// ============================================================
 // Вспомогательные
 // ============================================================
 

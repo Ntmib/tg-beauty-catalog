@@ -30,6 +30,8 @@ import { masterBookingsScreen } from './screens/master-bookings.js';
 import { masterProfileScreen } from './screens/master-profile.js';
 import { serviceEditScreen } from './screens/service-edit.js';
 import { welcomeScreen, shouldShowWelcome } from './screens/welcome.js';
+import { planSelectScreen } from './screens/plan-select.js';
+import { masterBroadcastScreen } from './screens/master-broadcast.js';
 
 /** Запуск приложения */
 async function init() {
@@ -69,6 +71,8 @@ async function init() {
   registerScreen('master-profile', masterProfileScreen);
   registerScreen('service-edit', serviceEditScreen);
   registerScreen('welcome', welcomeScreen);
+  registerScreen('plan-select', planSelectScreen);
+  registerScreen('master-broadcast', masterBroadcastScreen);
 
   // Показать/скрыть переключатель режимов (только для debug в браузере)
   if (session.debug) {
