@@ -66,9 +66,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { initData, bot_id } = await req.json() as {
+    const { initData, master_id: masterIdFromUrl } = await req.json() as {
       initData: string;
-      bot_id?: number;
+      master_id?: string;
     };
 
     if (!initData) {
@@ -76,25 +76,26 @@ Deno.serve(async (req) => {
     }
 
     // ── Определяем режим: платформенный бот или бот мастера ──────────
-    const isPlatformBot = !bot_id || bot_id === PLATFORM_BOT_ID;
+    // master_id приходит из URL (?master=<uuid>) когда клиент открывает бота мастера
+    const isPlatformBot = !masterIdFromUrl;
 
     let botToken: string;
     let masterFromDb: Record<string, unknown> | null = null;
 
     if (isPlatformBot) {
-      // ЭТАП А: новый мастер открыл платформенного бота
+      // ЭТАП А: мастер открыл платформенного бота (регистрация/онбординг)
       botToken = PLATFORM_BOT_TOKEN;
     } else {
-      // ЭТАП Б: клиент или мастер открыл бота мастера
+      // ЭТАП Б: клиент или мастер открыл бота мастера (master_id из URL)
       const { data: master } = await supabase
         .from("masters")
         .select("*")
-        .eq("bot_id", bot_id)
+        .eq("id", masterIdFromUrl)
         .eq("is_bot_active", true)
         .single();
 
       if (!master) {
-        return json({ error: "Bot not found" }, 404);
+        return json({ error: "Master not found" }, 404);
       }
 
       masterFromDb = master;

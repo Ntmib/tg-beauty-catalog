@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
         menu_button: {
           type: "web_app",
           text: "Открыть каталог",
-          web_app: { url: MINI_APP_URL },
+          web_app: { url: `${MINI_APP_URL}?master=${masterId}` },
         },
       });
     } catch (e) {

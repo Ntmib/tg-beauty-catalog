@@ -26,6 +26,9 @@ export async function authenticate() {
   }
 
   try {
+    // master_id из URL (?master=<uuid>) — когда клиент открывает бота мастера
+    const masterIdFromUrl = new URLSearchParams(window.location.search).get('master') || undefined;
+
     // Таймаут 10 сек на случай зависания Edge Function
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -33,7 +36,7 @@ export async function authenticate() {
     const res = await fetch(`${SUPABASE_BASE_URL}/functions/v1/auth-telegram`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ initData }),
+      body: JSON.stringify({ initData, master_id: masterIdFromUrl }),
       signal: controller.signal,
     });
     clearTimeout(timeoutId);

@@ -69,7 +69,7 @@ async def _start_client(token: str, chat_id: int, user: dict, master: dict) -> N
     name = user.get("first_name", "")
     master_name = master.get("first_name", "мастера")
     bot_username = master.get("bot_username", "")
-    mini_app_url = f"{MINI_APP_BASE_URL}?startapp=open"
+    mini_app_url = f"{MINI_APP_BASE_URL}?master={master.get('id', '')}"
 
     text = (
         f"Привет, {name}! 👋\n\n"
@@ -87,7 +87,7 @@ async def _start_client(token: str, chat_id: int, user: dict, master: dict) -> N
 
 async def _start_client_promo(token: str, chat_id: int, user: dict, master: dict) -> None:
     name = user.get("first_name", "")
-    mini_app_url = f"{MINI_APP_BASE_URL}?startapp=open"
+    mini_app_url = f"{MINI_APP_BASE_URL}?master={master.get('id', '')}"
 
     text = (
         f"🎁 {name}, держи промокод на первую запись!\n\n"
@@ -102,7 +102,7 @@ async def _start_client_promo(token: str, chat_id: int, user: dict, master: dict
 
 async def _start_master(token: str, chat_id: int, master: dict) -> None:
     name = master.get("first_name", "")
-    mini_app_url = f"{MINI_APP_BASE_URL}?startapp=admin"
+    mini_app_url = f"{MINI_APP_BASE_URL}?master={master.get('id', '')}"
 
     text = (
         f"Привет, {name}! 👩‍💼\n\n"
@@ -121,7 +121,7 @@ async def _start_master(token: str, chat_id: int, master: dict) -> None:
 async def handle_help(token: str, chat_id: int, master: dict) -> None:
     master_name = master.get("first_name", "мастера")
     bot_username = master.get("bot_username", "")
-    mini_app_url = f"{MINI_APP_BASE_URL}?startapp=open"
+    mini_app_url = f"{MINI_APP_BASE_URL}?master={master.get('id', '')}"
 
     text = (
         f"ℹ️ Каталог {master_name}\n\n"
@@ -137,7 +137,7 @@ async def handle_help(token: str, chat_id: int, master: dict) -> None:
 
 
 async def handle_unknown(token: str, chat_id: int, master: dict) -> None:
-    mini_app_url = f"{MINI_APP_BASE_URL}?startapp=open"
+    mini_app_url = f"{MINI_APP_BASE_URL}?master={master.get('id', '')}"
 
     text = "Для записи используй каталог 👇"
     keyboard = make_inline_keyboard([
