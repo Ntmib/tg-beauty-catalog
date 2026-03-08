@@ -38,14 +38,15 @@ function authFetch(url, options = {}) {
   // Всегда добавляем apikey явно (Supabase требует)
   headers['apikey'] = SUPABASE_ANON_KEY;
 
-  if (_authToken) {
-    headers['Authorization'] = `Bearer ${_authToken}`;
-  }
+  // ВАЖНО: удаляем ОБА варианта ключа (SDK пишет 'authorization' в нижнем регистре,
+  // мы пишем 'Authorization' — без удаления в запросе окажутся ДВА заголовка,
+  // PostgREST конкатенирует их и видит 5 частей вместо 3.
+  delete headers['authorization'];
+  delete headers['Authorization'];
 
-  // DEBUG: логируем части JWT в Authorization
-  const authVal = headers['Authorization'] || '';
-  const jwtPart = authVal.replace('Bearer ', '');
-  console.log('[authFetch] JWT parts in Authorization:', jwtPart.split('.').length, '| url:', String(url).split('/').slice(-2).join('/'));
+  if (_authToken) {
+    headers['authorization'] = `Bearer ${_authToken}`;
+  }
 
   return fetch(url, { ...options, headers }).then(async res => {
     if (!res.ok) {
