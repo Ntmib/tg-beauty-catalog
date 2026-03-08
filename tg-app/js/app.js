@@ -46,9 +46,9 @@ async function init() {
   // 4. Скрыть загрузку
   hideLoading();
 
-  // Если авторизация не удалась — показать ошибку
-  if (!session) {
-    showError();
+  // Если авторизация не удалась — показать ошибку с деталями
+  if (!session || session.authError) {
+    showError(session?.authError);
     return;
   }
 
@@ -123,7 +123,7 @@ function hideLoading() {
   setTimeout(() => { el.style.display = 'none'; el.style.opacity = '1'; }, 300);
 }
 
-function showError() {
+function showError(reason = '') {
   const container = document.getElementById('screen-container');
   if (container) {
     container.innerHTML = `
@@ -131,6 +131,7 @@ function showError() {
         <div class="empty-state-icon">❌</div>
         <div class="empty-state-title">Ошибка авторизации</div>
         <div class="empty-state-text">Перезапустите приложение через Telegram</div>
+        ${reason ? `<div class="caption" style="margin-top:8px;color:red;font-size:11px;word-break:break-all;">${reason}</div>` : ''}
       </div>
     `;
   }

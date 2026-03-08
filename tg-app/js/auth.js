@@ -43,8 +43,9 @@ export async function authenticate() {
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      console.error('[auth] Ошибка аутентификации:', err);
-      return null;
+      const reason = err.error || err.message || `HTTP ${res.status}`;
+      console.error('[auth] Ошибка аутентификации:', reason);
+      return { authError: reason };
     }
 
     const data = await res.json();
@@ -53,7 +54,7 @@ export async function authenticate() {
     return data;
   } catch (e) {
     console.error('[auth] Сбой сети:', e);
-    return null;
+    return { authError: e.name === 'AbortError' ? 'Timeout (>10s)' : (e.message || 'Network error') };
   }
 }
 
