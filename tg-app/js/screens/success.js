@@ -22,8 +22,8 @@ export const successScreen = {
             <path d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <div class="page-title" style="margin-bottom: var(--space-1);">Вы записаны!</div>
-        <div class="caption">Ожидает подтверждения мастера</div>
+        <div class="page-title" style="margin-bottom: var(--space-1);">Место забронировано!</div>
+        <div class="caption">Мастер скоро подтвердит ваш визит</div>
       </div>
 
       <div class="card fade-in-up delay-2 mt-lg">
@@ -52,7 +52,7 @@ export const successScreen = {
       </div>
 
       <div class="caption text-center fade-in-up delay-3 mt">
-        Напоминание придёт в бота за 24ч и за 2ч до записи
+        Администратор напомнит о визите за 24ч и за 2ч
       </div>
 
       <div class="flex-col-center gap-2 mt-lg fade-in-up delay-4" style="align-items: stretch;">

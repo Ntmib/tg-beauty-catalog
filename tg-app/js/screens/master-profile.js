@@ -6,7 +6,7 @@
 
 import { specialties } from '../data.js';
 import { goBack } from '../router.js';
-import { showMainButton, hapticSelection, hapticSuccess } from '../telegram.js';
+import { hideMainButton, hapticSelection, hapticSuccess } from '../telegram.js';
 import { getMasterProfile, saveMasterProfile, clearCache } from '../api.js';
 
 export const masterProfileScreen = {
@@ -113,7 +113,7 @@ export const masterProfileScreen = {
       }
     };
 
-    showMainButton('Сохранить', save);
+    hideMainButton();
     el.querySelector('#btn-save-profile')?.addEventListener('click', save);
   },
 };

@@ -67,3 +67,6 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 
 /** Базовый URL Supabase (для прямых fetch к Edge Functions) */
 export const SUPABASE_BASE_URL = SUPABASE_URL;
+
+/** Anon key (нужен как apikey для вызова Edge Functions без сессии) */
+export { SUPABASE_ANON_KEY };

@@ -7,12 +7,14 @@
 import { formatPrice, formatDuration } from '../data.js';
 import { navigateTo } from '../router.js';
 import { hapticLight, hideMainButton } from '../telegram.js';
-import { getServices, clearCache } from '../api.js';
+import { getServices, clearCache, getMasterRow } from '../api.js';
+
+const FREE_SERVICE_LIMIT = 5;
 
 export const masterServicesScreen = {
   render() {
     return `
-      <div class="page-title fade-in-up">Услуги</div>
+      <div class="page-title fade-in-up">Витрина</div>
       <div id="services-list">
         <div class="caption text-center" style="padding: 40px 0;">Загрузка...</div>
       </div>
@@ -26,8 +28,13 @@ export const masterServicesScreen = {
     hideMainButton();
 
     // Принудительное обновление при каждом входе
-    const services = await getServices(true).catch(() => []);
+    const [services, masterRow] = await Promise.all([
+      getServices(true).catch(() => []),
+      getMasterRow().catch(() => null),
+    ]);
     const activeServices = services.filter(s => s.is_active);
+    const isPro = masterRow?.plan === 'pro' && masterRow?.plan_expires_at && new Date(masterRow.plan_expires_at) > new Date();
+    const atLimit = !isPro && activeServices.filter(s => !s.is_over_limit).length >= FREE_SERVICE_LIMIT;
 
     const serviceCards = activeServices.map((s, i) => {
       const overLimit = s.is_over_limit ? `<div class="status status-pending mt-sm">🔒 Скрыта (лимит плана)</div>` : '';
@@ -46,9 +53,34 @@ export const masterServicesScreen = {
       `;
     }).join('');
 
-    el.querySelector('#services-list').innerHTML = activeServices.length > 0
-      ? serviceCards
-      : `<div class="empty-state"><div class="empty-state-text">Добавьте первую услугу</div></div>`;
+    // Баннер лимита
+    const limitBanner = atLimit ? `
+      <div class="tip" id="tip-limit" style="
+        background: linear-gradient(135deg, var(--tg-theme-button-color, #e8748a) 0%, #c45e72 100%);
+        color: var(--tg-theme-button-text-color, #fff);
+        border-radius: 14px;
+        cursor: pointer;
+        margin-bottom: 12px;
+      ">
+        <div class="tip-icon">🔒</div>
+        <div class="tip-text" style="color: inherit;">
+          <b>Лимит Free: ${FREE_SERVICE_LIMIT} услуг</b><br>
+          Перейдите на Pro чтобы добавить больше →
+        </div>
+      </div>
+    ` : '';
+
+    el.querySelector('#services-list').innerHTML = (activeServices.length > 0
+      ? limitBanner + serviceCards
+      : `<div class="empty-state"><div class="empty-state-text">Добавьте первую услугу</div></div>`);
+
+    // Кнопка добавить — заблокирована при лимите
+    const addBtn = el.querySelector('#btn-add-service');
+    if (atLimit) {
+      addBtn.textContent = '🔒 Лимит достигнут — перейти на Pro';
+      addBtn.classList.remove('btn-outline');
+      addBtn.classList.add('btn-secondary');
+    }
 
     el.querySelectorAll('[data-service-id]').forEach(card => {
       card.addEventListener('click', () => {
@@ -59,7 +91,16 @@ export const masterServicesScreen = {
 
     el.querySelector('#btn-add-service')?.addEventListener('click', () => {
       hapticLight();
-      navigateTo('service-edit', { serviceId: null });
+      if (atLimit) {
+        navigateTo('plan-select');
+      } else {
+        navigateTo('service-edit', { serviceId: null });
+      }
+    });
+
+    el.querySelector('#tip-limit')?.addEventListener('click', () => {
+      hapticLight();
+      navigateTo('plan-select');
     });
   },
 };

@@ -475,15 +475,16 @@ created_at   TIMESTAMPTZ DEFAULT now()
 
 ## Монетизация
 
-| Параметр | Free | Pro (299₽/мес) | Premium (599₽/мес) |
-|---------|------|---------------|-------------------|
-| Услуг | 5 | Безлимит | Безлимит |
-| Фото портфолио | 10 | 50 | Безлимит |
-| История записей | 30 дней | 1 год | Навсегда |
-| Цветовая тема | ❌ | ❌ | ✅ (5 тем) |
-| Логотип + название | ❌ | ❌ | ✅ |
-| Убрать "Powered by" | ❌ | ❌ | ✅ |
-| Grace period при просрочке | — | 3 дня | 3 дня |
+**Два тарифа (Premium убран — упрощаем):**
+
+| Параметр | Free | Pro (699₽/мес) |
+|---------|------|----------------|
+| Услуг | 5 | Безлимит |
+| Фото портфолио | 10 | Безлимит |
+| История записей | 30 дней | 1 год |
+| Grace period при просрочке | — | 3 дня |
+
+**Оплата:** YooKassa (карты РФ, 699₽/мес)
 
 ---
 
@@ -580,22 +581,16 @@ created_at   TIMESTAMPTZ DEFAULT now()
 - [x] Задеплоено на Vercel: https://tg-app-khaki.vercel.app
 
 ### Этап 5: Монетизация ⏳ СЛЕДУЮЩИЙ
+- [ ] Включить Stars: @BotFather → @Beauty_100master_bot → Bot Payments → Stars
 - [ ] Edge Function: `payments/yookassa/create` — создание платежа YooKassa
 - [ ] Edge Function: `payments/yookassa/webhook` — обработка успешной оплаты
-- [ ] Edge Function: `payments/stars/create` — отправка Stars инвойса через платформенного бота
-- [ ] Edge Function: `payments/stars/webhook` — обработка successful_payment
 - [ ] UI выбора плана в дашборде мастера (экран plan-select)
 - [ ] Ограничения по плану в UI (кнопка "Добавить услугу" disabled + подсказка)
 - [ ] Замочки на услугах is_over_limit в master-services.js
 - [ ] Telegram-уведомление мастеру после успешной оплаты
-- [ ] Telegram-уведомление Дмитрию (@ADMIN_TELEGRAM_ID) после каждой оплаты
-- [ ] VPS: обработка pre_checkout_query от Stars в webhook-сервере
+- [ ] Telegram-уведомление Дмитрию после каждой оплаты
 
-### Этап 6: White-Label ⏳ ПОСЛЕ МОНЕТИЗАЦИИ
-- [ ] Экран выбора темы (только premium)
-- [ ] Загрузка логотипа через Supabase Storage (bucket: logos)
-- [ ] Динамическое применение CSS-переменных из таблицы themes
-- [ ] Убирать/показывать "Powered by" в зависимости от плана
+### Этап 6: White-Label ❌ ОТМЕНЁН (упрощаем — два тарифа Free/Pro)
 
 ### Этап 7: Admin-страница для Дмитрия ⏳ ПОСЛЕ МОНЕТИЗАЦИИ
 - [ ] Отдельная страница `/admin` на Vercel

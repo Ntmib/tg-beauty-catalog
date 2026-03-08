@@ -44,11 +44,11 @@ function renderStep0() {
     <div class="text-center fade-in-up" style="padding: 8px 0 16px;">
       <div style="font-size: 56px; margin-bottom: 12px;">💅</div>
       <div class="page-title" style="font-size: 22px; line-height: 1.3;">
-        Устала отвечать на одни и те же вопросы?
+        Давайте откроем ваш салон!
       </div>
       <div class="caption" style="margin-top: 8px; font-size: 15px; line-height: 1.5;">
-        Клиенты будут записываться сами — пока ты работаешь.
-        Настройка займёт 3 минуты.
+        Личный салон красоты в Telegram — за 3 минуты.
+        Клиенты записываются сами, пока вы работаете.
       </div>
     </div>
 
@@ -58,10 +58,10 @@ function renderStep0() {
         <div style="display: flex; align-items: flex-start; gap: 12px;">
           <div style="font-size: 24px; flex-shrink: 0;">😤</div>
           <div>
-            <div style="font-weight: 600; font-size: 14px;">Переписки отнимают время</div>
+            <div style="font-weight: 600; font-size: 14px;">Ресепшен вместо переписок</div>
             <div class="caption" style="margin-top: 2px;">
-              Мастера тратят 1–2 часа в день, чтобы ответить на «когда есть свободное время?».
-              Теперь клиент сам выбирает время и записывается.
+              Клиент сам выбирает время и записывается — как в настоящем салоне.
+              Больше никаких «когда свободно?» в ЛС.
             </div>
           </div>
         </div>
@@ -69,10 +69,10 @@ function renderStep0() {
         <div style="display: flex; align-items: flex-start; gap: 12px;">
           <div style="font-size: 24px; flex-shrink: 0;">👻</div>
           <div>
-            <div style="font-weight: 600; font-size: 14px;">Клиенты записываются и не приходят</div>
+            <div style="font-weight: 600; font-size: 14px;">Администратор напомнит о визите</div>
             <div class="caption" style="margin-top: 2px;">
-              Приложение само напоминает клиенту о записи за день.
-              Мастера говорят — клиенты стали приходить намного чаще.
+              Бот-администратор напоминает клиенту о записи за день.
+              Клиенты стали приходить намного чаще.
             </div>
           </div>
         </div>
@@ -80,10 +80,10 @@ function renderStep0() {
         <div style="display: flex; align-items: flex-start; gap: 12px;">
           <div style="font-size: 24px; flex-shrink: 0;">📲</div>
           <div>
-            <div style="font-weight: 600; font-size: 14px;">Всё прямо в Telegram</div>
+            <div style="font-weight: 600; font-size: 14px;">Салон по адресу t.me/ваш_бот</div>
             <div class="caption" style="margin-top: 2px;">
-              Не нужно скачивать отдельные приложения.
-              Клиент записывается там, где уже сидит — в Telegram.
+              Не нужен сайт и Instagram.
+              Клиент заходит в ваш салон там, где уже сидит — в Telegram.
             </div>
           </div>
         </div>
@@ -93,11 +93,11 @@ function renderStep0() {
 
     <button class="btn btn-primary btn-full fade-in-up delay-2" id="btn-pitch-next"
             style="margin-top: var(--space-5);">
-      Хочу попробовать →
+      Открыть салон →
     </button>
 
     <div class="caption text-center fade-in-up delay-3" style="margin-top: 10px; opacity: 0.6;">
-      Бесплатно · Без комиссий · 3 минуты
+      Бесплатно · Без комиссий · Открытие за 3 минуты
     </div>
   `;
 }
@@ -124,8 +124,8 @@ function renderStep1() {
 
   return `
     <div class="fade-in-up">
-      <div class="page-title">Расскажи о себе</div>
-      <div class="caption" style="margin-top: 4px;">Клиенты увидят это на твоей страничке</div>
+      <div class="page-title">Повесьте вывеску</div>
+      <div class="caption" style="margin-top: 4px;">Имя и специализация — первое, что увидят клиенты в вашем салоне</div>
     </div>
 
     <div class="input-group fade-in-up delay-1" style="margin-top: var(--space-4);">
@@ -261,9 +261,9 @@ function renderStep2() {
 
   return `
     <div class="fade-in-up">
-      <div class="page-title">Какие услуги ты делаешь?</div>
+      <div class="page-title">Оформите витрину</div>
       <div class="caption" style="margin-top: 4px;">
-        Выбери одну или несколько. Остальные добавишь потом — это займёт минуту.
+        Выберите услуги для витрины. Остальные добавите потом — это займёт минуту.
       </div>
     </div>
 
@@ -274,7 +274,7 @@ function renderStep2() {
     </div>
 
     <button class="btn btn-primary btn-full mt fade-in-up delay-2" id="btn-step2-next">
-      Готово — создать каталог
+      Готово — открыть салон
     </button>
   `;
 }
@@ -300,8 +300,8 @@ function setupStep2(el) {
     const btn = el.querySelector('#btn-step2-next');
     const count = selectedServices.length;
     btn.textContent = count > 0
-      ? `Готово — создать каталог (выбрано: ${count})`
-      : 'Готово — создать каталог';
+      ? `Готово — открыть салон (выбрано: ${count})`
+      : 'Готово — открыть салон';
   };
 
   el.querySelectorAll('.service-template').forEach(item => {
@@ -372,7 +372,7 @@ function renderSaving() {
   return `
     <div class="text-center fade-in-up" style="padding: 80px 0;">
       <div style="font-size: 48px; margin-bottom: 16px;">⏳</div>
-      <div class="page-title">Создаём твой каталог...</div>
+      <div class="page-title">Открываем ваш салон...</div>
       <div class="caption" style="margin-top: 8px;">Секунду!</div>
     </div>
   `;
@@ -404,8 +404,8 @@ function renderPreview() {
   return `
     <div class="text-center fade-in-up">
       <div style="font-size: 48px; margin-bottom: 8px;">🎉</div>
-      <div class="page-title">Каталог готов!</div>
-      <div class="caption" style="margin-top: 4px;">Вот как тебя видят клиенты:</div>
+      <div class="page-title">Салон открыт!</div>
+      <div class="caption" style="margin-top: 4px;">Вот как выглядит ваш салон для клиентов:</div>
     </div>
 
     <!-- Превью карточки мастера -->
@@ -429,11 +429,11 @@ function renderPreview() {
 
     <!-- Что даёт бот -->
     <div class="card fade-in-up delay-2" style="margin-top: var(--space-3);">
-      <div style="font-weight: 600; font-size: 14px; margin-bottom: 8px;">После подключения бота ты сможешь:</div>
+      <div style="font-weight: 600; font-size: 14px; margin-bottom: 8px;">Подключите администратора — и салон заработает на полную:</div>
       <div style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 1.4;">
-        <div>🔔 Клиенты получают напоминание о записи — сами</div>
-        <div>📣 Делать рассылку акций всем клиентам сразу</div>
-        <div>🔗 Давать клиентам личную ссылку для записи</div>
+        <div>🔔 Администратор напомнит клиенту о визите</div>
+        <div>📣 Рассылка акций всем клиентам салона</div>
+        <div>🔗 Личная ссылка-адрес вашего салона</div>
       </div>
     </div>
 
@@ -441,10 +441,10 @@ function renderPreview() {
     <div class="card fade-in-up delay-3" style="margin-top: var(--space-3);">
       <div style="font-size: 28px; text-align: center; margin-bottom: 8px;">🤖</div>
       <div style="font-weight: 600; font-size: 15px; text-align: center; margin-bottom: 6px;">
-        Подключи своего бота
+        Подключите администратора
       </div>
       <div class="caption text-center" style="margin-bottom: 14px; line-height: 1.5;">
-        Создать бота бесплатно через @BotFather — это займёт 2 минуты.
+        Создайте бота через @BotFather — это вывеска и администратор вашего салона.
       </div>
 
       <div class="input-group" style="margin-bottom: 8px;">
@@ -473,11 +473,11 @@ function renderPreview() {
 
     <button class="btn btn-outline btn-full fade-in-up delay-3" id="btn-skip-bot"
             style="margin-top: var(--space-3);">
-      Подключу позже — перейти в кабинет
+      Подключу позже — войти в салон
     </button>
 
     <div class="caption text-center fade-in-up delay-4" style="margin-top: 10px; opacity: 0.6;">
-      Бота можно подключить в любой момент в настройках
+      Администратора можно подключить позже в настройках салона
     </div>
   `;
 }

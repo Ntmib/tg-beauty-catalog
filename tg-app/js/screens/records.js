@@ -12,7 +12,7 @@ import { getClientBookings, cancelBooking } from '../api.js';
 export const recordsScreen = {
   render() {
     return `
-      <div class="page-title fade-in-up">Мои записи</div>
+      <div class="page-title fade-in-up">Мои визиты</div>
       <div id="records-content">
         <div class="caption text-center" style="padding: 40px 0;">Загрузка записей...</div>
       </div>

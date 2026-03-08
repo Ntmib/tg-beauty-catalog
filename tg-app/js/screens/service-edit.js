@@ -6,7 +6,7 @@
 
 import { formatDuration, formatPrice } from '../data.js';
 import { goBack } from '../router.js';
-import { showMainButton, hapticSuccess, hapticWarning, confirm as tgConfirm } from '../telegram.js';
+import { hideMainButton, hapticSuccess, hapticWarning, confirm as tgConfirm } from '../telegram.js';
 import { getServiceById, saveService, deleteService, clearCache } from '../api.js';
 
 const durationOptions = [30, 60, 90, 120, 150, 180];
@@ -127,7 +127,7 @@ export const serviceEditScreen = {
       }
     };
 
-    showMainButton('Сохранить', save);
+    hideMainButton();
     el.querySelector('#btn-save-service')?.addEventListener('click', save);
 
     // Удаление

@@ -5,7 +5,7 @@
  */
 
 import { goBack } from '../router.js';
-import { showMainButton, hapticSelection, hapticSuccess } from '../telegram.js';
+import { hideMainButton, hapticSelection, hapticSuccess } from '../telegram.js';
 import { getSchedule, saveSchedule } from '../api.js';
 
 export const masterScheduleScreen = {
@@ -33,7 +33,7 @@ export const masterScheduleScreen = {
       .join('');
 
     el.querySelector('#schedule-content').innerHTML = `
-      <div class="page-title fade-in-up">Расписание</div>
+      <div class="page-title fade-in-up">Часы работы</div>
 
       <div class="section-title fade-in-up delay-1">Рабочие дни</div>
       <div class="day-toggles fade-in-up delay-1" id="day-toggles">${dayToggles}</div>
@@ -107,7 +107,7 @@ export const masterScheduleScreen = {
       }
     };
 
-    showMainButton('Сохранить', save);
+    hideMainButton();
     el.querySelector('#btn-save-schedule')?.addEventListener('click', save);
   },
 };

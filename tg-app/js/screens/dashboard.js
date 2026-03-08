@@ -15,7 +15,7 @@ export const dashboardScreen = {
   render() {
     return `
       <div class="fade-in-up">
-        <div class="page-title" id="dash-greeting">Дашборд</div>
+        <div class="page-title" id="dash-greeting">Ваш салон</div>
       </div>
       <div id="dash-content">
         <div class="caption text-center" style="padding: 40px 0;">Загрузка...</div>
@@ -40,7 +40,7 @@ export const dashboardScreen = {
     const botUsername = masterRow?.bot_username || '';
     const isPro = masterRow?.plan === 'pro' && masterRow?.plan_expires_at && new Date(masterRow.plan_expires_at) > new Date();
 
-    el.querySelector('#dash-greeting').textContent = `Привет, ${firstName}!`;
+    el.querySelector('#dash-greeting').textContent = `Салон ${firstName}`;
 
     const upcomingBookings = bookings
       .filter(b => b.status === 'pending' || b.status === 'confirmed')
@@ -80,11 +80,11 @@ export const dashboardScreen = {
       ${botUsername ? `
         <div class="card fade-in-up delay-1">
           <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">
-            Ссылка для записи клиентов
+            Адрес вашего салона
           </div>
           <div class="caption" style="margin-bottom: 10px; line-height: 1.5;">
-            Отправь эту ссылку своим клиентам — они откроют твой каталог,
-            выберут услугу и запишутся сами в удобное время
+            Отправьте эту ссылку клиентам — они зайдут в ваш салон,
+            посмотрят витрину и запишутся сами
           </div>
           <div style="
             background: var(--tg-theme-secondary-bg-color, #f5f5f5);
@@ -103,14 +103,14 @@ export const dashboardScreen = {
       ` : `
         <div class="card fade-in-up delay-1">
           <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">
-            Ссылка для записи клиентов
+            Адрес вашего салона
           </div>
           <div class="caption" style="margin-bottom: 10px; line-height: 1.5;">
-            Подключи своего бота — и получишь личную ссылку.
-            Клиенты откроют её и запишутся сами, без переписки с тобой
+            Подключите администратора — и получите адрес салона.
+            Клиенты зайдут по ссылке и запишутся сами
           </div>
           <button class="btn btn-outline btn-full" id="btn-connect-bot-dash">
-            Подключить бота →
+            Подключить администратора →
           </button>
         </div>
       `}
@@ -131,22 +131,22 @@ export const dashboardScreen = {
       <div class="grid-2x2 fade-in-up delay-3">
         <button class="grid-tile" data-goto="master-services">
           <div class="grid-tile-icon">📋</div>
-          <div class="grid-tile-title">Услуги</div>
+          <div class="grid-tile-title">Витрина</div>
           <div class="grid-tile-subtitle">${activeServicesCount} услуг</div>
         </button>
         <button class="grid-tile" data-goto="master-portfolio">
           <div class="grid-tile-icon">📷</div>
-          <div class="grid-tile-title">Фото</div>
+          <div class="grid-tile-title">Фото работ</div>
           <div class="grid-tile-subtitle">${photoCount} фото</div>
         </button>
         <button class="grid-tile" data-goto="master-schedule">
           <div class="grid-tile-icon">🕐</div>
-          <div class="grid-tile-title">График</div>
+          <div class="grid-tile-title">Часы работы</div>
           <div class="grid-tile-subtitle">${workDaysText}</div>
         </button>
         <button class="grid-tile" data-goto="master-profile">
           <div class="grid-tile-icon">👤</div>
-          <div class="grid-tile-title">Профиль</div>
+          <div class="grid-tile-title">Вывеска</div>
           <div class="grid-tile-subtitle">Изменить</div>
         </button>
       </div>

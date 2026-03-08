@@ -18,7 +18,7 @@ let _service = null;
 export const bookingScreen = {
   render(params) {
     return `
-      <div class="page-title fade-in-up">Выберите дату</div>
+      <div class="page-title fade-in-up">Забронируйте место</div>
       <div id="date-scroll-wrap">
         <div class="caption text-center" style="padding: 16px 0;">Загрузка...</div>
       </div>
@@ -33,7 +33,7 @@ export const bookingScreen = {
         <div class="booking-summary-details" id="summary-details"></div>
       </div>
       <button class="btn btn-primary mt-lg" id="btn-confirm-booking" style="display: none;">
-        Подтвердить запись
+        Забронировать место
       </button>
     `;
   },
@@ -58,7 +58,7 @@ export const bookingScreen = {
     el.querySelector('#summary-service').textContent = `💅 ${_service.title}`;
     enableClosingConfirmation();
 
-    showMainButton('Подтвердить запись', () => confirmBooking(el));
+    showMainButton('Забронировать место', () => confirmBooking(el));
     disableMainButton();
 
     // Рендер дат
@@ -167,7 +167,7 @@ async function confirmBooking(el) {
     });
   } catch (e) {
     console.error('[booking] Ошибка записи:', e);
-    if (btn) { btn.disabled = false; btn.textContent = 'Подтвердить запись'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Забронировать место'; }
     window.alert && window.alert('Не удалось создать запись. Попробуйте ещё раз.');
   }
 }

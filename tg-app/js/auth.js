@@ -7,7 +7,7 @@
  * Сохраняет сессию и устанавливает токен в supabase клиент.
  */
 
-import { setAuthToken, SUPABASE_BASE_URL } from './supabase.js';
+import { setAuthToken, SUPABASE_BASE_URL, SUPABASE_ANON_KEY } from './supabase.js';
 
 let _session = null; // { access_token, role, master_id, debug? }
 
@@ -35,7 +35,11 @@ export async function authenticate() {
 
     const res = await fetch(`${SUPABASE_BASE_URL}/functions/v1/auth-telegram`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      },
       body: JSON.stringify({ initData, master_id: masterIdFromUrl }),
       signal: controller.signal,
     });

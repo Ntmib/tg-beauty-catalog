@@ -25,29 +25,29 @@ export const welcomeScreen = {
         </div>
 
         <div class="caption fade-in-up delay-2" style="margin-bottom: var(--space-8); line-height: 1.5;">
-          Это каталог бьюти-мастера.<br>Вот что здесь можно:
+          Добро пожаловать в салон!<br>Вот что здесь есть:
         </div>
 
         <div class="fade-in-up delay-3" style="text-align: left; width: 100%; max-width: 280px; margin-bottom: var(--space-10);">
           <div class="card-row" style="margin-bottom: var(--space-4);">
             <div class="card-icon">💅</div>
             <div class="card-body">
-              <div class="card-title">Посмотреть услуги и цены</div>
-              <div class="card-subtitle">Портфолио работ с фото</div>
+              <div class="card-title">Витрина</div>
+              <div class="card-subtitle">Услуги, цены и фото работ</div>
             </div>
           </div>
           <div class="card-row" style="margin-bottom: var(--space-4);">
             <div class="card-icon">📅</div>
             <div class="card-body">
-              <div class="card-title">Записаться онлайн</div>
-              <div class="card-subtitle">Выбрать дату и время за пару тапов</div>
+              <div class="card-title">Ресепшен</div>
+              <div class="card-subtitle">Выберите дату и время за пару тапов</div>
             </div>
           </div>
           <div class="card-row">
             <div class="card-icon">🔔</div>
             <div class="card-body">
-              <div class="card-title">Получать напоминания</div>
-              <div class="card-subtitle">Бот напомнит о записи за день</div>
+              <div class="card-title">Администратор</div>
+              <div class="card-subtitle">Напомнит о визите за день</div>
             </div>
           </div>
         </div>

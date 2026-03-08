@@ -104,7 +104,12 @@ html {
 
 body {
   font-family: 'Inter', -apple-system, 'SF Pro Text', system-ui, 'Segoe UI', Roboto, sans-serif;
-  background: var(--bg);
+  background:
+    /* Subtle dot pattern — rose, 4% opacity */
+    radial-gradient(circle, hsl(340 65% 60% / 0.04) 1px, transparent 1px),
+    /* Фоновый цвет */
+    var(--bg);
+  background-size: 24px 24px;
   color: var(--text);
   line-height: 1.4;
   min-height: 100vh;

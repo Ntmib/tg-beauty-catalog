@@ -11,7 +11,7 @@ import { getMasterBookings, updateBookingStatus } from '../api.js';
 export const masterBookingsScreen = {
   render() {
     return `
-      <div class="page-title fade-in-up">Записи</div>
+      <div class="page-title fade-in-up">Журнал визитов</div>
       <div class="tabs fade-in-up delay-1" id="booking-tabs">
         <button class="tab active" data-filter="new">Новые</button>
         <button class="tab" data-filter="all">Все</button>
