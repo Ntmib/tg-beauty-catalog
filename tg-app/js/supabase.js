@@ -42,7 +42,21 @@ function authFetch(url, options = {}) {
     headers['Authorization'] = `Bearer ${_authToken}`;
   }
 
-  return fetch(url, { ...options, headers });
+  // DEBUG: логируем части JWT в Authorization
+  const authVal = headers['Authorization'] || '';
+  const jwtPart = authVal.replace('Bearer ', '');
+  console.log('[authFetch] JWT parts in Authorization:', jwtPart.split('.').length, '| url:', String(url).split('/').slice(-2).join('/'));
+
+  return fetch(url, { ...options, headers }).then(async res => {
+    if (!res.ok) {
+      const clone = res.clone();
+      try {
+        const errBody = await clone.json();
+        console.error('[authFetch] Error response:', errBody?.message || errBody?.error, '| status:', res.status);
+      } catch {}
+    }
+    return res;
+  });
 }
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
