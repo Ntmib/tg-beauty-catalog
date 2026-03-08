@@ -81,7 +81,8 @@ export async function saveMasterProfile({ name, specialty, bio, experience, city
   // Обновить имя в таблице masters
   const { error: mErr } = await supabase
     .from('masters')
-    .update({ first_name, last_name });
+    .update({ first_name, last_name })
+    .eq('id', getMasterId());
   if (mErr) throw mErr;
 
   // Upsert master_profiles
@@ -106,7 +107,8 @@ export async function saveMasterProfile({ name, specialty, bio, experience, city
 export async function completeOnboarding() {
   const { error } = await supabase
     .from('masters')
-    .update({ onboarding_done: true });
+    .update({ onboarding_done: true })
+    .eq('id', getMasterId());
   if (error) throw error;
 }
 
